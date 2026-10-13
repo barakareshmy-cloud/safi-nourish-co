@@ -1,0 +1,3 @@
+Facebook exact business-page URL has not been supplied. Current button goes to facebook.com, not directly to the business page. Replace with official page URL once confirmed.
+Instagram handle taken from supplied banner: https://www.instagram.com/safinourishke/ (not verified).
+Email: Gmail compose addressed to info@safinourish.co.ke; alternate mailto link.
