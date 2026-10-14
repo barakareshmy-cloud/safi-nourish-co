@@ -1,0 +1,12 @@
+SAFI NOURISH - GITHUB PAGES
+
+1. Extract this ZIP.
+2. Upload ALL files and the assets folder to the root of the GitHub repository barakareshmy-cloud/safi-nourish-co.
+3. Keep index.html in the root (not inside another folder).
+4. Commit changes.
+5. Settings > Pages > Deploy from a branch > main > /(root) > Save.
+6. Wait for deployment and hard-refresh the published site (Ctrl+F5).
+
+Homepage: 18 display cards = 8 beef (4 styles shown twice), 8 sheep (4 styles shown twice), 2 bulk; individual WhatsApp Shop Online links.
+Google Map: Contact page, Iconic Business Plaza, Moi Avenue, Shop B13, basement floor.
+Note: Shop Online directs to WhatsApp; live M-Pesa processing needs a backend.

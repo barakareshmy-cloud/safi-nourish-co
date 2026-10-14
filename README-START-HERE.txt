@@ -30,3 +30,6 @@ SEPARATE PRODUCT PAGES:
 beef.html — ONLY Safi Beef Tallow (glass/plastic, 500 g and 1 kg)
 sheep.html — ONLY Safi Sheep Tallow (glass/plastic, 500 g and 1 kg)
 Home Beef and Sheep tiles open their respective dedicated pages.
+
+
+Latest update: Google Map section restored on the Contact page for Iconic Business Plaza, Moi Avenue, Shop B13 (Basement Floor).
