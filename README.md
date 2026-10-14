@@ -7,3 +7,5 @@ This site includes the original Safi product photographs from the supplied banne
 The shopping bag persists across pages on the same local origin using localStorage; WhatsApp ordering opens a prefilled message. M-Pesa checkout is only a preview and cannot accept payments. A merchant payment integration, order backend and proper deployment are needed.
 
 Do not use the displayed postal codes as a verified map location. Social links still need exact Facebook and Instagram URLs.
+
+SHELF UPDATE: The shop, Beef Tallow, Sheep Tallow and Bulk Orders pages show individual product cards with fixed prices and direct WhatsApp order links. No size dropdowns or bag controls. Bulk images are illustrative, and displayed prices should be verified before publication.

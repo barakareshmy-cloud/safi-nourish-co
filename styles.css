@@ -96,7 +96,7 @@ body{background:var(--cream)}
 :root {--serif:'Playfair Display',Georgia,serif}
 body{font-family:'DM Sans',Arial,sans-serif}
 .approved-hero{background:linear-gradient(90deg,#f7f2e8 0%,#f7f2e8 44%,#f1e7d3 100%);display:flex;min-height:690px;position:relative;overflow:hidden;isolation:isolate}
-.approved-hero-picture{position:absolute;right:0;top:0;bottom:0;width:60%;background-image:url('assets/homepage-product-background.webp');background-size:cover;background-position:center center;z-index:-1}
+.approved-hero-picture{position:absolute;right:0;top:0;bottom:0;width:60%;background-image:url('assets/real-use-less.jpg');background-size:cover;background-position:center center;z-index:-1}
 .approved-hero:after{content:'';position:absolute;inset:0;pointer-events:none;z-index:-1;background:linear-gradient(90deg,#fbf8f0 0%,rgba(251,248,240,.97) 32%,rgba(251,248,240,.68) 45%,rgba(251,248,240,.02) 62%)}
 .approved-hero .hero-photo-inner{padding:75px 0;display:flex;align-items:center}
 .approved-hero .hero-panel{background:transparent;box-shadow:none;border:0;padding:15px 0;backdrop-filter:none;max-width:615px}
@@ -137,3 +137,98 @@ body{font-family:'DM Sans',Arial,sans-serif}
 .safi-social-links{display:flex;flex-direction:column;gap:12px}
 .contact-details .safi-social-links a{font:500 18px/1.4 Arial,sans-serif;color:#194d37;text-decoration:underline;text-underline-offset:4px}
 .contact-details .safi-social-links a:hover{color:#9b761f}
+
+/* SAFI NOURISH PRODUCT SHELF */
+.shelf-page-intro{padding-bottom:20px}
+.shelf-wrap{padding-top:26px;padding-bottom:105px}
+.shelf-heading{text-align:center;margin:0 auto 35px;max-width:640px}
+.shelf-heading>span{color:#977940;letter-spacing:2.7px;font-size:11px;font-weight:800}
+.shelf-heading h2{font:normal 48px/1.15 var(--serif);margin:13px 0 8px;color:#143c2a}
+.shelf-heading p{font-size:14px;line-height:1.7;color:#68736b}
+.shelf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px}
+.shelf-card{background:#fffdf8;border:1px solid #e4decf;border-radius:12px;overflow:hidden;box-shadow:0 10px 35px rgba(27,47,33,.045);display:flex;flex-direction:column;transition:transform .15s ease,box-shadow .15s ease}
+.shelf-card:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(27,47,33,.10)}
+.shelf-image{height:300px;background:#f1efe5;display:flex;align-items:center;justify-content:center;padding:21px;overflow:hidden}
+.shelf-image img{display:block;width:100%;height:100%;object-fit:contain}
+.shelf-image.small-pack img{transform:scale(.80)}
+.shelf-content{padding:22px 22px 23px;display:flex;flex-direction:column;flex:1}
+.shelf-eyebrow{font-size:10px;font-weight:800;letter-spacing:1.3px;color:#987b49}
+.shelf-eyebrow span{color:#718174}
+.shelf-content h3{font:normal 25px/1.25 var(--serif);color:#153b2b;margin:12px 0 9px}
+.shelf-content>p{color:#627064;font-size:13px;line-height:1.7;margin:0 0 14px;min-height:41px}
+.shelf-chips{display:flex;gap:7px;margin:0 0 14px;flex-wrap:wrap}
+.shelf-chips span{font-size:10px;border-radius:30px;padding:6px 10px;background:#eaf0e6;color:#29523b;font-weight:700}
+.shelf-price{font-size:24px;font-weight:800;color:#163b2d;margin:auto 0 12px}
+.shelf-disclaimer{display:block;color:#888576;font-size:10px;margin:-5px 0 10px}
+.shelf-order{display:block;background:#176d45;color:white;text-align:center;border-radius:7px;padding:14px 12px;font-size:12px;font-weight:800;margin-top:auto}
+.shelf-order:hover{background:#0c5232;color:white}
+@media(max-width:900px){.shelf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){.shelf-grid{grid-template-columns:1fr}.shelf-image{height:285px}.shelf-heading h2{font-size:36px}}
+
+/* Homepage: one mixed display of all 18 featured product positions */
+.homepage-product-shelf{padding-top:76px;padding-bottom:90px}
+.homepage-shelf-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:stretch}
+.homepage-shelf-grid .shelf-card{display:flex;flex-direction:column;min-width:0}
+.homepage-shelf-grid .shelf-content{display:flex;flex-direction:column;flex:1}
+.homepage-shelf-grid .shelf-content .shelf-action,.homepage-shelf-grid .shelf-content a[href*="wa.me"]{margin-top:auto}
+.homepage-shelf-grid .shelf-image{height:275px}
+.homepage-shelf-grid .shelf-image img{max-height:100%;object-fit:contain}
+.shelf-disclaimer{font-size:12px;color:#686f64;margin:0 0 26px;line-height:1.65}
+@media(max-width:980px){.homepage-shelf-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.homepage-shelf-grid{grid-template-columns:1fr}.homepage-shelf-grid .shelf-image{height:285px}}
+
+.shelf-image{background:#f8f5ea;}
+.shelf-image img{object-fit:contain !important; padding:14px; background:#f8f5ea;}
+
+
+/* Updated actual product shelf */
+.actual-products-section{padding-top:3.5rem;padding-bottom:4rem;}
+.actual-shelf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:28px;align-items:start;}
+.actual-shelf-card{background:#f7f3e8;border:1px solid #e6dcc8;border-radius:18px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.06);display:flex;flex-direction:column;height:100%;}
+.actual-shelf-image{background:#fff;display:flex;align-items:center;justify-content:center;min-height:320px;padding:18px;}
+.actual-shelf-image img{width:100%;height:auto;max-height:360px;object-fit:contain;display:block;}
+.actual-shelf-body{padding:20px 20px 24px;display:flex;flex-direction:column;gap:12px;height:100%;}
+.actual-shelf-body h3{margin:0;color:#113a2e;font-size:1.45rem;line-height:1.25;}
+.actual-price{margin:0;font-weight:700;font-size:1.12rem;color:#a17323;}
+.actual-desc{margin:0;color:#43514d;line-height:1.55;}
+.actual-meta{margin:0;padding-left:18px;color:#113a2e;line-height:1.5;display:grid;gap:6px;}
+.actual-meta li{margin:0;}
+.actual-shop-btn{margin-top:auto;display:inline-flex;align-self:flex-start;}
+@media (max-width: 640px){.actual-shelf-image{min-height:260px;padding:12px}.actual-shelf-body h3{font-size:1.2rem}}
+
+/* Explicit clickable Shop Online buttons, visible in every browser */
+a.actual-shop-btn, a.actual-shop-btn:link, a.actual-shop-btn:visited {
+ display:flex !important;align-items:center !important;justify-content:center !important;
+ width:100% !important;min-height:51px !important;margin-top:auto !important;
+ padding:13px 18px !important;box-sizing:border-box !important;
+ border:2px solid #0f4432 !important;border-radius:9px !important;
+ background:#0d563b !important;color:#ffffff !important;
+ text-align:center !important;text-decoration:none !important;font-family:Arial,sans-serif !important;
+ font-size:16px !important;font-weight:800 !important;line-height:1.2 !important;
+ cursor:pointer !important;opacity:1 !important;visibility:visible !important;
+}
+a.actual-shop-btn:hover,a.actual-shop-btn:focus-visible{background:#08744b !important;border-color:#08744b !important;color:#fff !important;box-shadow:0 5px 12px rgba(0,60,40,.25) !important;}
+.actual-shelf-card{height:100% !important;}
+.actual-shelf-body{flex:1;}
+.actual-shelf-image{height:280px;min-height:0 !important;overflow:hidden;}
+.actual-shelf-image img{width:100%;height:100% !important;max-height:100% !important;object-fit:contain !important;}
+.featured-placement{align-self:flex-start;font-size:11px;color:#785412;background:#f4e3b9;border-radius:20px;padding:4px 10px;font-weight:700;}
+
+/* Home-page moments, while keeping navigation minimal */
+.home-moments-title{padding-top:72px;padding-bottom:20px;}
+.home-moments-title h2{font-family:Georgia,serif;color:#173c2c;font-size:clamp(2rem,4vw,3.2rem);margin:12px 0 0;}
+main > .gallery-feature{margin-bottom:75px;}
+
+/* Safi Nourish custom story design */
+.safi-story-hero{background:#f4f0e4;padding:75px 0 85px;overflow:hidden}.story-hero-grid{display:grid;grid-template-columns:1fr 1.05fr;align-items:center;gap:64px}.story-intro h1{font:500 clamp(48px,5.2vw,78px)/1.08 Georgia,serif;letter-spacing:-2px;color:#123b2b;margin:22px 0 25px}.story-intro h1 em,.story-lead h2 em,.feature-copy h2 em,.safi-story-ending h2 em{font-style:italic;color:#9d7a42;font-weight:400}.story-intro p{font-size:16px;line-height:1.9;color:#526358;max-width:510px;margin-bottom:32px}.story-photo-stack{position:relative}.story-main-photo{width:100%;height:560px;object-fit:cover;border-radius:170px 170px 12px 12px;box-shadow:24px 22px 0 #e0d6bd}.story-photo-caption{position:absolute;left:-25px;bottom:32px;background:#143c2b;color:#fff;padding:19px 28px;font-size:10px;font-weight:bold;letter-spacing:2px}.story-photo-caption span{color:#d2b37d;margin-left:15px}.safi-story-principles{padding:100px 0}.story-lead{text-align:center;max-width:760px;margin:auto auto 48px}.story-lead h2,.feature-copy h2,.safi-story-ending h2{font:400 clamp(40px,4.5vw,63px)/1.12 Georgia,serif;color:#153b2a;letter-spacing:-1.6px}.story-lead p,.feature-copy p,.safi-story-ending p{color:#617064;line-height:1.85;font-size:15px}.story-values{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}.story-values article{background:#f4f1e8;padding:34px 30px;border-top:3px solid #b79a69;min-height:235px}.value-number{color:#a58a52;font-weight:bold;font-size:13px}.story-values h3{font:28px Georgia,serif;color:#173e2c;margin:20px 0 14px}.story-values p{font-size:13px;line-height:1.75;color:#607064}.safi-story-feature{background:#173d2c;padding:85px 0}.feature-story-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:75px;align-items:center}.feature-photo img{width:100%;height:470px;object-fit:cover}.feature-copy .eyebrow{color:#d5bd8c}.feature-copy h2{color:#fff9ed}.feature-copy p{color:#d1dacd}.feature-copy .button-outline{color:#fff4df;border-color:#d5bd8c;margin-top:18px}.safi-story-ending{text-align:center;padding:105px 0 120px}.safi-story-ending p{max-width:540px;margin:15px auto 28px}.story-ending-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+@media(max-width:800px){.story-hero-grid,.feature-story-grid{grid-template-columns:1fr;gap:45px}.story-main-photo{height:380px}.story-values{grid-template-columns:1fr}.safi-story-hero{padding:55px 0}.feature-photo img{height:350px}.story-photo-caption{left:0}}
+
+/* SAFI NOURISH: COMPANY VISIT + MAP */
+.safi-location{padding:75px 0 95px}.safi-location-intro{max-width:920px;margin-bottom:30px}
+.safi-location-intro h2{color:#173c2c;font-family:Georgia,serif;font-size:clamp(2rem,4.4vw,4rem);line-height:1.12;margin:10px 0 24px}
+.safi-location-intro h2 em{color:#967841;font-weight:400}.safi-location-intro p{font-size:16px;line-height:1.85;color:#506358}
+.safi-map-grid{display:grid;grid-template-columns:minmax(260px,.85fr) minmax(340px,1.5fr);gap:24px;align-items:stretch}
+.safi-address-card{background:#eae8da;border:1px solid #d7d4c0;padding:32px;border-radius:14px}.safi-address-card h3{color:#183e2d;font-family:Georgia,serif;font-size:30px;margin:12px 0}.safi-address-card p{line-height:1.7;color:#415b4b}.safi-address-note{font-size:13px}
+.safi-direction-button,.safi-whatsapp-button{display:block;text-align:center;background:#133f2d;color:#fff!important;text-decoration:none;padding:15px;margin-top:14px;border-radius:8px;font-weight:700;font-size:14px}.safi-whatsapp-button{background:#fff;color:#133f2d!important;border:1px solid #133f2d}
+.safi-map-frame{min-height:415px;border-radius:14px;overflow:hidden;border:1px solid #d7d4c0;background:#ecebe2}.safi-map-frame iframe{display:block;width:100%;height:100%;min-height:415px;border:0}
+@media(max-width:750px){.safi-map-grid{grid-template-columns:1fr}.safi-location{padding:45px 0}.safi-address-card{padding:22px}}
