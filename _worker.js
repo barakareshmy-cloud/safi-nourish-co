@@ -42,6 +42,37 @@ async function setup(env) {
   } catch(_) { return {ready:false,mode}; }
   return {ready:true,mode};
 }
+// Readiness can initialize/check the order table without accepting payments.
+// Never return credential contents or customer data to the browser.
+async function readiness(env) {
+  const mode=allowedMode(env);
+  const liveMode=mode==='live';
+  const liveKey=secretMatches(env,'live');
+  let storage=false;
+  if(database(env)) {
+    try {
+      await env.ORDER_DB.prepare(`CREATE TABLE IF NOT EXISTS orders (
+        reference TEXT PRIMARY KEY,
+        email TEXT NOT NULL,
+        items_json TEXT NOT NULL,
+        amount_subunits INTEGER NOT NULL CHECK(amount_subunits > 0),
+        currency TEXT NOT NULL CHECK(currency = 'KES'),
+        environment TEXT NOT NULL CHECK(environment IN ('test','live')),
+        status TEXT NOT NULL CHECK(status IN ('created','awaiting_payment','init_failed','paid','failed')),
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        paid_at TEXT
+      )`).run();
+      await env.ORDER_DB.prepare('SELECT reference FROM orders LIMIT 1').first();
+      storage=true;
+    } catch (_) {}
+  }
+  return reply({
+    ready_to_enable: liveMode && liveKey && storage,
+    payments_enabled: env?.PAYMENTS_ENABLED==='true',
+    checks: { live_mode:liveMode, live_key_present:liveKey, order_database:storage }
+  });
+}
 function getCart(input) {
   const email=typeof input?.email==='string'?input.email.trim():'';
   if(email.length>254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw Error('Please enter a valid email.');
@@ -157,6 +188,7 @@ export default {
     if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
     // Safety: no checkout on Cloudflare preview deployment or alternate domain.
     if(new URL(request.url).origin!==SITE_ORIGIN)return reply({error:'Unknown payment endpoint.'},404);
+    if(path==='/api/readiness' && request.method==='GET')return readiness(env);
     if(path==='/api/checkout-config' && request.method==='GET'){
       const s=await setup(env);return reply({enabled:s.ready,mode:s.ready?s.mode:'disabled'});
     }

@@ -1,0 +1,10 @@
+Safi Nourish payment readiness check — real payments stay OFF.
+
+1. Upload only _worker.js to the ROOT of your GitHub repository (beside index.html); commit.
+2. Wait for successful Cloudflare production deployment.
+3. Open https://safi-nourish-co.pages.dev/api/readiness
+4. Send a screenshot of the JSON response (it contains no secret key).
+5. DO NOT change PAYMENTS_ENABLED from false yet.
+
+If ready_to_enable is false, the checks object identifies the missing config.
+If ready_to_enable is true, we still need to check webhook functionality and operations before enabling real customer payments.
