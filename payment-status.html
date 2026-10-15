@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Payment Status | Safi Nourish</title>
+<style>
+ body{margin:0;background:#f3f7f2;color:#173c2a;font-family:system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh;display:grid;place-items:center}
+ main{background:#fff;border-radius:17px;box-shadow:0 6px 28px #0002;max-width:570px;width:calc(100% - 40px);padding:32px;box-sizing:border-box;text-align:center}
+ h1{font-size:27px;margin-top:8px}p{line-height:1.6}.warning{color:#905700;font-weight:700}a,button{color:#1e583c;font-weight:700}button{background:#205b3f;color:white;padding:12px 20px;border:0;border-radius:9px;cursor:pointer}.links{margin-top:20px}.ref{overflow-wrap:anywhere;font-size:13px;color:#62736a}
+</style>
+</head>
+<body><main>
+<p class="warning">PAYSTACK TEST MODE — no real M-Pesa charge</p>
+<h1 id="title">Checking payment status…</h1>
+<p id="message" role="status" aria-live="polite">We are securely checking the transaction with Paystack.</p>
+<p id="reference" class="ref"></p>
+<p>Product subtotal excludes delivery. A successful test does not create a live order.</p>
+<button type="button" id="retry">Check status again</button>
+<p class="links"><a href="/shop.html">Return to Safi Nourish shop</a></p>
+</main>
+<script>
+(() => {
+ 'use strict';
+ const title=document.querySelector('#title'),message=document.querySelector('#message'),refEl=document.querySelector('#reference'),retry=document.querySelector('#retry');
+ const reference=new URL(location.href).searchParams.get('reference')||'';
+ if(!/^[A-Za-z0-9._=\-]{6,120}$/.test(reference)){
+   title.textContent='No payment reference found';message.textContent='Please return to the shop and begin a new test checkout.';retry.disabled=true;return;
+ }
+ refEl.textContent='Paystack reference: '+reference;
+ let busy=false;
+ async function check(){
+   if(busy)return;busy=true;retry.disabled=true;message.textContent='Checking directly with Paystack…';
+   try{
+     const response=await fetch('/api/verify-payment?reference='+encodeURIComponent(reference),{cache:'no-store'});
+     const result=await response.json();
+     if(!response.ok)throw Error(result.error||'Unable to verify payment');
+     if(result.status==='success'){
+       title.textContent='Test payment verified';
+       message.textContent='Paystack confirmed a successful TEST transaction for KSh '+Number(result.subtotal_kes).toLocaleString('en-KE')+'. No real money was collected or order placed.';
+     } else if(result.status==='failed'){
+       title.textContent='Test payment not completed';message.textContent='Paystack did not confirm this payment. Please return to the shop and try again.';
+     } else {
+       title.textContent='Payment confirmation pending';message.textContent='Paystack has not yet confirmed completion. Please wait and check again. Do not assume the order was paid.';
+     }
+   }catch(error){title.textContent='Unable to verify payment';message.textContent=error.message||'Please try again in a moment.';}
+   finally{busy=false;retry.disabled=false;}
+ }
+ retry.addEventListener('click',check);check();
+})();
+</script>
+</body>
+</html>

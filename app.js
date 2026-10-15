@@ -19,6 +19,7 @@ function notify(message){const el=get('toast');el.textContent=message;el.classLi
 function renderCart(){const n=cart.reduce((s,i)=>s+i.qty,0);get('cart-count').textContent=n;get('drawer-count').textContent=`(${n})`;get('subtotal').textContent=money(subtotal());get('checkout-total').textContent=`Subtotal: ${money(subtotal())}`;const url=whatsappUrl();get('order-whatsapp').href=url;get('checkout-whatsapp').href=url;get('open-checkout').disabled=!cart.length;get('order-whatsapp').setAttribute('aria-disabled',!cart.length?'true':'false');const list=get('cart-items');list.replaceChildren();if(!cart.length){const p=document.createElement('p');p.className='empty-cart';p.textContent='Your shopping bag is empty. Explore our tallow collection and add something you love.';list.append(p);return}for(const item of cart){const row=document.createElement('div');row.className='cart-line';const details=document.createElement('div');const title=document.createElement('strong');title.textContent=item.kind==='beef'?'Safi Beef Tallow':'Safi Sheep Tallow';const sub=document.createElement('small');sub.textContent=`${item.size===1000?'1 kg':'500 g'} · ${item.pack} · Qty ${item.qty}`;const remove=document.createElement('button');remove.type='button';remove.textContent='Remove item';remove.addEventListener('click',()=>{cart=cart.filter(i=>!(i.kind===item.kind&&i.pack===item.pack&&i.size===item.size));persist();renderCart()});details.append(title,sub,remove);const total=document.createElement('b');total.textContent=money(price(item)*item.qty);row.append(details,total);list.append(row)}}
 function openCart(){shade.hidden=false;drawer.classList.add('open');drawer.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';get('close-cart').focus()}
 function closeCart(){drawer.classList.remove('open');drawer.setAttribute('aria-hidden','true');shade.hidden=true;document.body.style.overflow=''}
+if (get('open-cart') && get('close-cart') && shade && drawer && get('cart-count') && get('checkout-dialog')) {
 get('open-cart').addEventListener('click',openCart);get('close-cart').addEventListener('click',closeCart);shade.addEventListener('click',closeCart);
 document.querySelectorAll('.product-card').forEach(card=>{card.querySelector('.add-btn').addEventListener('click',()=>{const kind=card.dataset.kind,pack=card.dataset.pack,size=Number(card.querySelector('select').value);const found=cart.find(i=>i.kind===kind&&i.pack===pack&&i.size===size);if(found)found.qty++;else cart.push({kind,pack,size,qty:1});persist();renderCart();notify('Added to your shopping bag');openCart()})});
 get('open-checkout').addEventListener('click',()=>{if(!cart.length)return;closeCart();get('checkout-dialog').showModal()});
@@ -28,6 +29,21 @@ get('year').textContent=new Date().getFullYear();
 get('menu-toggle').addEventListener('click',()=>{const nav=get('navigation');const open=nav.classList.toggle('open');get('menu-toggle').setAttribute('aria-expanded',String(open))});
 document.querySelectorAll('#navigation a').forEach(a=>a.addEventListener('click',()=>{get('navigation').classList.remove('open');get('menu-toggle').setAttribute('aria-expanded','false')}));
 renderCart();
+}
+
+// Restore site navigation and footer on catalogue pages without the legacy WhatsApp drawer.
+if (!get('open-cart')) {
+  if (get('year')) get('year').textContent = new Date().getFullYear();
+  get('menu-toggle')?.addEventListener('click', () => {
+    const nav = get('navigation');
+    const open = nav?.classList.toggle('open');
+    get('menu-toggle').setAttribute('aria-expanded', String(Boolean(open)));
+  });
+  document.querySelectorAll('#navigation a').forEach(link => link.addEventListener('click', () => {
+    get('navigation')?.classList.remove('open');
+    get('menu-toggle')?.setAttribute('aria-expanded', 'false');
+  }));
+}
 
 // Gallery filter controls, if the gallery is present.
 const galleryButtons=document.querySelectorAll('[data-filter]');

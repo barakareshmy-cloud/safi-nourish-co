@@ -1,14 +1,147 @@
-(()=>{'use strict';const products={
-'beef-glass-1000':['Beef Tallow 1kg Glass',850],'beef-glass-500':['Beef Tallow 500g Glass',450],
-'beef-plastic-1000':['Beef Tallow 1kg Plastic',750],'beef-plastic-500':['Beef Tallow 500g Plastic',350],
-'sheep-glass-1000':['Sheep Tallow 1kg Glass',1150],'sheep-glass-500':['Sheep Tallow 500g Glass',600],
-'sheep-plastic-1000':['Sheep Tallow 1kg Plastic',950],'sheep-plastic-500':['Sheep Tallow 500g Plastic',500],
-'beef-bulk-10000':['Beef Tallow 10L Bulk',7000],'sheep-bulk-10000':['Sheep Tallow 10L Bulk',9000]};
-const cart=new Map(),fmt=n=>'KSh '+n.toLocaleString('en-KE');const style=document.createElement('style');style.textContent='#safi-cart-btn{position:fixed;right:18px;bottom:18px;z-index:9998;background:#174b32;color:white;border:0;border-radius:30px;padding:13px 19px;box-shadow:0 5px 22px #0004;cursor:pointer;font-weight:700}#safi-cart-dialog{border:0;border-radius:15px;padding:22px;width:min(480px,90vw);max-height:85vh;overflow:auto;color:#183e2b}#safi-cart-dialog::backdrop{background:#0008}.safi-cart-row{display:flex;justify-content:space-between;gap:12px;margin:12px 0;border-bottom:1px solid #ddd;padding-bottom:9px}#safi-cart-dialog button{cursor:pointer}#safi-cart-dialog input{padding:10px;border:1px solid #aaa;border-radius:6px;width:100%;box-sizing:border-box}';document.head.append(style);
-const button=document.createElement('button');button.id='safi-cart-btn';button.type='button';button.textContent='🛒 Cart (0)';document.body.append(button);
-const dialog=document.createElement('dialog');dialog.id='safi-cart-dialog';dialog.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center"><h2>Shopping Cart · Test Mode</h2><button type="button" id="safi-close">✕</button></div><div id="safi-items"></div><p id="safi-total"></p><p style="font-size:13px">Product prices only. Delivery is not included. No real payments are accepted in Test Mode.</p><label for="safi-email">Email for checkout</label><input type="email" id="safi-email" placeholder="customer@example.com" required><button type="button" id="safi-pay" style="background:#174b32;color:white;border:0;border-radius:8px;padding:13px;width:100%;margin-top:12px">Continue to Paystack test checkout</button><p id="safi-status" role="status"></p>';document.body.append(dialog);
-function render(){let total=0,count=0,lines='';for(const [sku,qty] of cart){const [name,price]=products[sku];total+=price*qty;count+=qty;lines+='<div class="safi-cart-row"><div>'+name+'<br>'+fmt(price)+' × '+qty+'</div><div><button data-change="'+sku+'" data-delta="-1">−</button> '+qty+' <button data-change="'+sku+'" data-delta="1">+</button></div></div>';}document.getElementById('safi-items').innerHTML=lines||'Your cart is empty.';document.getElementById('safi-total').textContent='Products total: '+fmt(total);button.textContent='🛒 Cart ('+count+')';}
-function add(sku){cart.set(sku,(cart.get(sku)||0)+1);render();dialog.showModal();}
-document.querySelectorAll('a[data-safi-sku]').forEach(a=>{const sku=a.dataset.safiSku;if(!products[sku])return;a.removeAttribute('target');a.removeAttribute('rel');a.href='#safi-cart';a.textContent='Add to Cart · '+fmt(products[sku][1]);a.addEventListener('click',e=>{e.preventDefault();add(sku)});});
-button.onclick=()=>{render();dialog.showModal()};document.getElementById('safi-close').onclick=()=>dialog.close();dialog.addEventListener('click',e=>{const b=e.target.closest('[data-change]');if(!b)return;const sku=b.dataset.change,n=(cart.get(sku)||0)+Number(b.dataset.delta);if(n<=0)cart.delete(sku);else cart.set(sku,n);render()});
-document.getElementById('safi-pay').onclick=async()=>{const status=document.getElementById('safi-status'),email=document.getElementById('safi-email').value.trim();if(!cart.size){status.textContent='Add a product first.';return;}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){status.textContent='Enter a valid email address.';return;}const pay=document.getElementById('safi-pay');pay.disabled=true;status.textContent='Preparing test checkout…';try{const items=[...cart].map(([sku,qty])=>{const [kind,pack,size]=sku.split('-');return {kind,pack,size,qty}});const response=await fetch('/api/initialize-payment',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,items})});const data=await response.json();if(!response.ok||!data.checkout_url)throw Error(data.error||'Checkout unavailable');const url=new URL(data.checkout_url);if(url.protocol!=='https:'||!url.hostname.endsWith('paystack.co')&&!url.hostname.endsWith('paystack.com'))throw Error('Unexpected payment destination');location.href=url.href;}catch(e){status.textContent=e.message||'Checkout unavailable';pay.disabled=false;}};render();})();
+/* Safi Nourish — secure catalogue cart for Paystack-hosted TEST checkout.
+   Browser prices are display-only. Cloudflare validates EVERY SKU and price. */
+(() => {
+  'use strict';
+  const catalog = Object.freeze({
+    'beef-glass-1000': ['Beef Tallow · 1kg Glass Jar', 850],
+    'beef-glass-500': ['Beef Tallow · 500g Glass Jar', 450],
+    'beef-plastic-1000': ['Beef Tallow · 1kg Plastic Jar', 750],
+    'beef-plastic-500': ['Beef Tallow · 500g Plastic Jar', 350],
+    'sheep-glass-1000': ['Sheep Tallow · 1kg Glass Jar', 1150],
+    'sheep-glass-500': ['Sheep Tallow · 500g Glass Jar', 600],
+    'sheep-plastic-1000': ['Sheep Tallow · 1kg Plastic Jar', 950],
+    'sheep-plastic-500': ['Sheep Tallow · 500g Plastic Jar', 500],
+    'beef-bulk-10000': ['Beef Tallow · 10L Bulk Bucket', 7000],
+    'sheep-bulk-10000': ['Sheep Tallow · 10L Bulk Bucket', 9000]
+  });
+  const storeKey = 'safi-paystack-test-cart-v2';
+  const cart = new Map();
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(storeKey) || '[]');
+    if (Array.isArray(saved)) for (const item of saved) {
+      if (Array.isArray(item) && Object.hasOwn(catalog, item[0]) && Number.isInteger(item[1]) && item[1] >= 1 && item[1] <= 20) cart.set(item[0], item[1]);
+    }
+  } catch (_) { /* the cart still works without browser storage */ }
+  const fmt = n => `KSh ${n.toLocaleString('en-KE')}`;
+  const save = () => { try { sessionStorage.setItem(storeKey, JSON.stringify([...cart])); } catch (_) {} };
+  const css = document.createElement('style');
+  css.textContent = `
+    #safi-cart-button{position:fixed;right:18px;bottom:18px;z-index:9990;border:0;border-radius:30px;padding:13px 20px;background:#195438;color:white;font-weight:750;box-shadow:0 5px 22px #0005;cursor:pointer;min-height:48px}
+    #safi-cart-modal{border:0;border-radius:17px;padding:22px;width:min(490px,calc(100% - 28px));max-height:87vh;overflow:auto;color:#173c2a;background:#fff;box-shadow:0 12px 55px #0004;box-sizing:border-box}
+    #safi-cart-modal::backdrop{background:rgba(0,0,0,.65)}
+    #safi-cart-modal .safi-header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    #safi-cart-modal h2{margin:0;font-size:23px;color:#173c2a}
+    #safi-cart-modal .safi-line{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #ddd}
+    #safi-cart-modal .safi-line strong{font-size:14px;display:block}
+    #safi-cart-modal .safi-line small{color:#55665e;display:block;margin-top:5px}
+    #safi-cart-modal .safi-qty{white-space:nowrap;display:flex;align-items:center;gap:7px}
+    #safi-cart-modal .safi-qty button{background:#edf4ee;border:1px solid #c7d6ca;padding:5px 9px;border-radius:7px;font-size:17px;cursor:pointer}
+    #safi-cart-modal input{box-sizing:border-box;width:100%;margin-top:7px;padding:11px;border-radius:8px;border:1px solid #9baaa0;font-size:16px}
+    #safi-cart-modal .safi-primary{display:block;width:100%;background:#195438;color:#fff;padding:14px;border:0;border-radius:8px;margin-top:13px;font-weight:750;cursor:pointer}
+    #safi-cart-modal button:disabled{opacity:.55;cursor:not-allowed}
+    #safi-cart-modal .safi-test{color:#865800;font-size:13px;font-weight:700}
+    #safi-cart-modal .safi-note{font-size:13px;line-height:1.55;color:#516158}
+    #safi-cart-modal .safi-status{font-size:14px;min-height:1.5em}
+  `;
+  document.head.append(css);
+  const button = document.createElement('button');
+  button.id = 'safi-cart-button';
+  button.type = 'button';
+  button.setAttribute('aria-label', 'Open Safi Nourish shopping cart');
+  const modal = document.createElement('dialog');
+  modal.id = 'safi-cart-modal';
+  modal.setAttribute('aria-label', 'Safi Nourish shopping cart');
+  modal.innerHTML = `
+    <div class="safi-header"><h2>Shopping Cart</h2><button type="button" id="safi-close-cart" aria-label="Close shopping cart" style="background:transparent;border:0;cursor:pointer;font-size:25px">×</button></div>
+    <p class="safi-test">PAYSTACK TEST MODE — no real M-Pesa charge</p>
+    <div id="safi-cart-lines"></div>
+    <p><strong>Product subtotal: <span id="safi-cart-total"></span></strong></p>
+    <p class="safi-note">Delivery is not included in the displayed total and will be arranged separately. Do not submit a real order through the test checkout.</p>
+    <form id="safi-checkout-form">
+      <label for="safi-checkout-email">Email address for test checkout</label>
+      <input id="safi-checkout-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="254" required>
+      <button type="submit" class="safi-primary" id="safi-checkout-pay">Continue to M-Pesa test checkout</button>
+    </form>
+    <p class="safi-status" role="status" aria-live="polite" id="safi-checkout-message"></p>
+    <p class="safi-note"><a href="https://wa.me/254740450447" target="_blank" rel="noopener noreferrer">Contact Safi Nourish about delivery</a></p>`;
+  document.body.append(button, modal);
+  const lines = modal.querySelector('#safi-cart-lines');
+  const totalEl = modal.querySelector('#safi-cart-total');
+  const status = modal.querySelector('#safi-checkout-message');
+  const payButton = modal.querySelector('#safi-checkout-pay');
+  function render() {
+    lines.replaceChildren();
+    let total = 0, count = 0;
+    for (const [sku, qty] of cart) {
+      const [label, price] = catalog[sku];
+      total += qty * price; count += qty;
+      const row = document.createElement('div'); row.className = 'safi-line';
+      const info = document.createElement('div');
+      const name = document.createElement('strong'); name.textContent = label;
+      const detail = document.createElement('small'); detail.textContent = `${fmt(price)} × ${qty} = ${fmt(price * qty)}`;
+      info.append(name, detail);
+      const qtyArea = document.createElement('div'); qtyArea.className = 'safi-qty';
+      for (const [sign, delta] of [['−', -1], ['+', 1]]) {
+        const adjust = document.createElement('button'); adjust.type = 'button';
+        adjust.textContent = sign;
+        adjust.setAttribute('aria-label', `${delta === 1 ? 'Add' : 'Remove'} one ${label}`);
+        adjust.addEventListener('click', () => {
+          const newQty = (cart.get(sku) || 0) + delta;
+          if (newQty <= 0) cart.delete(sku);
+          else if (newQty <= 20) cart.set(sku, newQty);
+          save(); status.textContent = ''; render();
+        });
+        qtyArea.append(adjust);
+      }
+      row.append(info, qtyArea); lines.append(row);
+    }
+    if (!count) lines.textContent = 'Your cart is empty. Please add a product.';
+    button.textContent = `🛒 Cart (${count})`;
+    totalEl.textContent = fmt(total);
+    payButton.disabled = !count;
+  }
+  function openCart() { render(); if (!modal.open) modal.showModal(); }
+  button.addEventListener('click', openCart);
+  modal.querySelector('#safi-close-cart').addEventListener('click', () => modal.close());
+  modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
+  function add(sku) {
+    if (!Object.hasOwn(catalog, sku)) return;
+    cart.set(sku, Math.min(20, (cart.get(sku) || 0) + 1));
+    status.textContent = ''; save(); openCart();
+  }
+  document.querySelectorAll('a[data-safi-sku]').forEach(anchor => {
+    const sku = anchor.dataset.safiSku;
+    if (!Object.hasOwn(catalog, sku)) return;
+    anchor.href = '#safi-cart';
+    anchor.removeAttribute('target');
+    anchor.removeAttribute('rel');
+    anchor.textContent = `Add to Cart · ${fmt(catalog[sku][1])}`;
+    const card = anchor.closest('article');
+    const priceLabel = card?.querySelector('.actual-price');
+    if (priceLabel) priceLabel.textContent = fmt(catalog[sku][1]);
+    anchor.addEventListener('click', event => { event.preventDefault(); add(sku); });
+  });
+  modal.querySelector('#safi-checkout-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const email = modal.querySelector('#safi-checkout-email').value.trim();
+    if (!cart.size || !email) return;
+    payButton.disabled = true;
+    status.textContent = 'Connecting to Paystack securely…';
+    try {
+      const response = await fetch('/api/initialize-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, items: [...cart].map(([sku, qty]) => ({ sku, qty })) })
+      });
+      const result = await response.json();
+      if (!response.ok || !result.checkout_url) throw new Error(result.error || 'Unable to start checkout.');
+      const url = new URL(result.checkout_url);
+      if (url.protocol !== 'https:' || url.hostname !== 'checkout.paystack.com') throw new Error('Unexpected payment page.');
+      window.location.assign(url.href);
+    } catch (error) {
+      status.textContent = error.message || 'Unable to connect. Please try again.';
+      payButton.disabled = false;
+    }
+  });
+  render();
+})();

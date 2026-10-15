@@ -1,0 +1,41 @@
+SAFI NOURISH — M-PESA / PAYSTACK TEST CHECKOUT REPAIR
+
+This upload contains 10 code files (plus this README). Only TEST MODE is enabled.
+18 product displays = 10 unique SKUs (featured products repeat); all prices include
+both 10L bulk buckets. Delivery is NOT included.
+
+WHAT TO UPLOAD (NO CODE EDITING)
+1. Download and EXTRACT this ZIP.
+2. Open github.com/barakareshmy-cloud/safi-nourish-co (main branch).
+3. Choose Add file -> Upload files.
+4. DRAG the contents of the extracted folder into the uploader, including the
+   FUNCTIONS folder. Do not upload the ZIP file. Do not drag your old 229 files.
+5. The files in the FUNCTIONS folder must end up in these exact GitHub paths:
+   functions/api/initialize-payment.js
+   functions/api/verify-payment.js
+6. Commit changes and let Cloudflare Pages redeploy from GitHub.
+7. Open https://safi-nourish-co.pages.dev and press Ctrl+Shift+R.
+8. Test with a non-sensitive dummy email using PAYSTACK TEST MODE only.
+
+CLOUDFLARE ONE-TIME CONFIGURATION (DO NOT PASTE KEYS IN CHAT OR GITHUB)
+Cloudflare Dashboard > Workers & Pages > safi-nourish-co > Settings > Variables and secrets.
+Add a SECRET named PAYSTACK_SECRET_KEY, set to your Paystack TEST secret key (sk_test_...).
+If you already have it configured, do not add another. Redeploy after changes.
+
+You may check the API configuration by opening
+https://safi-nourish-co.pages.dev/api/verify-payment
+without a reference (it should say 'Invalid payment reference' if configured;
+if it says 'Test verification is not configured', the secret is missing).
+This is NOT a payment test and does not prove Paystack transaction initialization works.
+
+PAYMENTS ARE TEST ONLY:
+- Does not accept real M-Pesa payments. Does not store fulfilment orders.
+- Does not compute delivery fees or taxes. No auto-fulfilment.
+- A Paystack approval, reviewed webhook/order-store setup, and live keys
+  are required before launch. Do not post secret keys in chat or GitHub.
+- Customer's email is sent only to the Cloudflare payment function and
+  Paystack for the test transaction; it is not saved by this demo website.
+
+If GitHub does not preserve the functions/ folder from the drag-and-drop upload,
+upload those two functions separately by opening the 'functions/api' folder on
+GitHub and choosing Add file > Upload files. Keep the same filenames.
