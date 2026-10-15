@@ -4,7 +4,8 @@
  * REQUIRED settings to take real money: PAYMENT_MODE=live,
  * PAYMENTS_ENABLED=true, PAYSTACK_SECRET_KEY secret sk_live_..., ORDER_DB D1
  * binding (the order table is created automatically), and Paystack live webhook registered.
- * NO LIVE MONEY is processed until explicitly enabled and fully configured.
+ * NEW LIVE CHARGES cannot begin until explicitly enabled and fully configured.
+ * Existing-order confirmation continues if checkout is switched off.
  */
 const SITE_ORIGIN = 'https://safi-nourish-co.pages.dev';
 const VERSION = 'safi-checkout-2026-10-live-v1';
@@ -21,9 +22,11 @@ const refValid = s => typeof s === 'string' && /^SAFI-[A-Za-z0-9-]{16,100}$/.tes
 const allowedMode = env => env?.PAYMENT_MODE === 'live' ? 'live' : env?.PAYMENT_MODE === 'test' ? 'test' : null;
 const secretMatches = (env, mode) => typeof env?.PAYSTACK_SECRET_KEY === 'string' && env.PAYSTACK_SECRET_KEY.startsWith(mode === 'live' ? 'sk_live_' : 'sk_test_') && env.PAYSTACK_SECRET_KEY.length > 15;
 const database = env => env?.ORDER_DB && typeof env.ORDER_DB.prepare === 'function';
-async function setup(env) {
+// Keep verification and signed webhook processing available even if new checkout
+// is paused; customers may have already completed a payment before the pause.
+async function setup(env, requireNewPayments=false) {
   const mode=allowedMode(env);
-  if(!mode || env?.PAYMENTS_ENABLED !== 'true' || !secretMatches(env,mode) || !database(env)) return {ready:false,mode:mode||'disabled'};
+  if(!mode || (requireNewPayments && env?.PAYMENTS_ENABLED !== 'true') || !secretMatches(env,mode) || !database(env)) return {ready:false,mode:mode||'disabled'};
   try {
     // Self-initializing schema so the business owner never has to paste SQL.
     await env.ORDER_DB.prepare(`CREATE TABLE IF NOT EXISTS orders (
@@ -92,7 +95,7 @@ async function paystackJson(url,env,options={}) {
   return data.data;
 }
 async function initialize(request,env) {
-  const config=await setup(env);
+  const config=await setup(env,true);
   if(!config.ready) return reply({error:'Online checkout is temporarily unavailable. Please contact Safi Nourish.'},503);
   if(request.headers.get('origin') !== SITE_ORIGIN) return reply({error:'Invalid checkout origin.'},403);
   if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))return reply({error:'Invalid request type.'},415);
@@ -189,8 +192,12 @@ export default {
     // Safety: no checkout on Cloudflare preview deployment or alternate domain.
     if(new URL(request.url).origin!==SITE_ORIGIN)return reply({error:'Unknown payment endpoint.'},404);
     if(path==='/api/readiness' && request.method==='GET')return readiness(env);
+    if(path==='/api/confirmation-readiness' && request.method==='GET'){
+      const config=await setup(env);
+      return reply({confirmations_ready:config.ready,new_payments_enabled:env?.PAYMENTS_ENABLED==='true',environment:config.ready?config.mode:'unavailable'});
+    }
     if(path==='/api/checkout-config' && request.method==='GET'){
-      const s=await setup(env);return reply({enabled:s.ready,mode:s.ready?s.mode:'disabled'});
+      const s=await setup(env,true);return reply({enabled:s.ready,mode:s.ready?s.mode:'disabled'});
     }
     if(path==='/api/initialize-payment' && request.method==='POST')return initialize(request,env);
     if(path==='/api/verify-payment' && request.method==='GET')return verify(request,env);
