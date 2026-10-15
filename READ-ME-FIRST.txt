@@ -1,41 +1,13 @@
-SAFI NOURISH — M-PESA / PAYSTACK TEST CHECKOUT REPAIR
+SAFI NOURISH — ONE-FILE PAYSTACK TEST API FIX
 
-This upload contains 10 code files (plus this README). Only TEST MODE is enabled.
-18 product displays = 10 unique SKUs (featured products repeat); all prices include
-both 10L bulk buckets. Delivery is NOT included.
+PROBLEM: Cart loads but /api/initialize-payment and /api/verify-payment return an HTML 404 rather than JSON. The Cloudflare payment routes are not deployed.
 
-WHAT TO UPLOAD (NO CODE EDITING)
-1. Download and EXTRACT this ZIP.
-2. Open github.com/barakareshmy-cloud/safi-nourish-co (main branch).
-3. Choose Add file -> Upload files.
-4. DRAG the contents of the extracted folder into the uploader, including the
-   FUNCTIONS folder. Do not upload the ZIP file. Do not drag your old 229 files.
-5. The files in the FUNCTIONS folder must end up in these exact GitHub paths:
-   functions/api/initialize-payment.js
-   functions/api/verify-payment.js
-6. Commit changes and let Cloudflare Pages redeploy from GitHub.
-7. Open https://safi-nourish-co.pages.dev and press Ctrl+Shift+R.
-8. Test with a non-sensitive dummy email using PAYSTACK TEST MODE only.
+UPLOAD ONLY _worker.js (NOT this ZIP) to the ROOT of GitHub repository barakareshmy-cloud/safi-nourish-co, next to index.html. Use GitHub Add file > Upload files; confirm filename is _worker.js at the repository ROOT before committing. No other site images/files must be reuploaded. Cloudflare Pages must deploy the main branch from GitHub.
 
-CLOUDFLARE ONE-TIME CONFIGURATION (DO NOT PASTE KEYS IN CHAT OR GITHUB)
-Cloudflare Dashboard > Workers & Pages > safi-nourish-co > Settings > Variables and secrets.
-Add a SECRET named PAYSTACK_SECRET_KEY, set to your Paystack TEST secret key (sk_test_...).
-If you already have it configured, do not add another. Redeploy after changes.
+This file uses Cloudflare Pages advanced-mode _worker.js; it overrides any old /functions directory routes but passes all regular static pages and images through to Cloudflare assets. Correct for this static Pages project where index.html is served from repository root.
 
-You may check the API configuration by opening
-https://safi-nourish-co.pages.dev/api/verify-payment
-without a reference (it should say 'Invalid payment reference' if configured;
-if it says 'Test verification is not configured', the secret is missing).
-This is NOT a payment test and does not prove Paystack transaction initialization works.
+After green Cloudflare deployment, visit https://safi-nourish-co.pages.dev/api/verify-payment . If it returns JSON {"error":"Invalid payment reference."}, the API route works and the test secret is configured. If it returns JSON {"error":"Test verification is not configured..."}, the API route works but a Cloudflare Pages test secret must be configured. If the Safi Nourish custom 404 page still appears, the _worker.js was not deployed in the site output; inspect GitHub file location, root/output settings and the Cloudflare deployment logs.
 
-PAYMENTS ARE TEST ONLY:
-- Does not accept real M-Pesa payments. Does not store fulfilment orders.
-- Does not compute delivery fees or taxes. No auto-fulfilment.
-- A Paystack approval, reviewed webhook/order-store setup, and live keys
-  are required before launch. Do not post secret keys in chat or GitHub.
-- Customer's email is sent only to the Cloudflare payment function and
-  Paystack for the test transaction; it is not saved by this demo website.
+CLOUDFLARE TEST SECRET: Workers & Pages > your Safi Nourish Pages project > Settings > Variables and Secrets > PAYSTACK_SECRET_KEY, secret type, value from Paystack TEST secret key beginning sk_test_. Never give that key to ChatGPT, send in screenshots, or commit to GitHub. Redeploy after changing runtime secrets.
 
-If GitHub does not preserve the functions/ folder from the drag-and-drop upload,
-upload those two functions separately by opening the 'functions/api' folder on
-GitHub and choosing Add file > Upload files. Keep the same filenames.
+SAFETY: TEST ONLY. No real M-Pesa money can be collected by this file; it rejects sk_live_ keys. Delivery is excluded; do not ship orders based only on a browser screen. Real commerce requires review of order storage, Paystack webhooks, paid-status verification, and live account approval.
