@@ -1,35 +1,13 @@
-SAFI NOURISH CO. — WEBSITE RELEASE
+Safi Nourish CART REPAIR (TEST ONLY)
 
-QUICK LOCAL PREVIEW
-1. Extract the ZIP.
-2. Open index.html in your browser.
-3. Visit Gallery and select Products, Cooking, Promotions or Customer moments.
-4. Visit Shop and test Bag and WhatsApp ordering.
+This ZIP contains ONLY SIX replacement files: index.html, shop.html, beef.html, sheep.html, bulk.html, safi-checkout.js.
 
-PUBLISHING (FREE NETLIFY DROP)
-1. Sign in at https://app.netlify.com/drop
-2. Drag this extracted Safi-Nourish-Website folder into the upload area.
-3. Netlify will provide a temporary netlify.app URL.
-4. Rename the site under site configuration to a suitable available safi-nourish name.
-5. Check all page links, image loading and mobile navigation on the published URL.
-6. Do not accept M-Pesa payments yet; checkout is a preview until a secure merchant API and order backend are configured.
+Upload the SIX files (NOT the ZIP and NOT the 229-file original) into the ROOT of your GitHub repository using Add file > Upload files. Allow overwrite/replace when asked. Commit changes. Cloudflare Pages should deploy automatically.
 
-IMPORTANT
-- Concept/mockup product images do not necessarily match the final product labels and lids; confirm before commercial launch.
-- Check product prices, packaging and fulfilment terms before publishing.
-- WhatsApp enquiries use +254740450447.
-- Facebook and Instagram profile destinations require confirmed URLs.
-- For checkout and payment completion, integrate with a provider through a secure backend, not static HTML.
-- Website photos sourced from the Safi Nourish ZIP provided in this conversation, plus illustrative Safi brand product renders.
+Keep all existing images, app.js, styles.css, and functions/api/initialize-payment.js. Do NOT upload secrets to GitHub.
 
+The 18 displays on the home/shop pages represent 10 unique SKUs; duplicates use the same price. Other product pages also gain cart buttons.
 
-DELIVERY LOCATION CHECKOUT: The shopping bag opens a checkout form for customer address and Google Maps pin, with optional GPS permission, then sends the order and location to WhatsApp. No payment is collected on this static site. The Contact page does not show a branch map because the physical branch location has not been confirmed.
+TEST MODE ONLY: no delivery charges, no payment verification or order persistence. Do not enable live payments or fulfill orders based on this checkout. A secure webhook and verified order database must be implemented before live sales.
 
-
-SEPARATE PRODUCT PAGES:
-beef.html — ONLY Safi Beef Tallow (glass/plastic, 500 g and 1 kg)
-sheep.html — ONLY Safi Sheep Tallow (glass/plastic, 500 g and 1 kg)
-Home Beef and Sheep tiles open their respective dedicated pages.
-
-
-Latest update: Google Map section restored on the Contact page for Iconic Business Plaza, Moi Avenue, Shop B13 (Basement Floor).
+Note: product prices in the visible cards have been aligned for the three known discrepancies. The previous WhatsApp links remain in the HTML but the checkout script intercepts tagged product buttons.
