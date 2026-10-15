@@ -1,8 +1,13 @@
-/* Safi Nourish — Cloudflare Pages advanced-mode Paystack TEST checkout API.
- * Upload ONLY this file to the ROOT of the Pages project, next to index.html.
- * This module deliberately rejects live Paystack secret keys.
- * Existing public pages and product images are served by env.ASSETS.
+/* Safi Nourish — Cloudflare Pages payment gateway, live-ready but FAIL-CLOSED.
+ * This file MUST be in the website root; the old /functions folder is ignored
+ * by Pages Advanced Mode. All prices and payment statuses are server-verified.
+ * REQUIRED settings to take real money: PAYMENT_MODE=live,
+ * PAYMENTS_ENABLED=true, PAYSTACK_SECRET_KEY secret sk_live_..., ORDER_DB D1
+ * binding (the order table is created automatically), and Paystack live webhook registered.
+ * NO LIVE MONEY is processed until explicitly enabled and fully configured.
  */
+const SITE_ORIGIN = 'https://safi-nourish-co.pages.dev';
+const VERSION = 'safi-checkout-2026-10-live-v1';
 const PRICES = Object.freeze({
   'beef-glass-1000': 850, 'beef-glass-500': 450,
   'beef-plastic-1000': 750, 'beef-plastic-500': 350,
@@ -10,93 +15,154 @@ const PRICES = Object.freeze({
   'sheep-plastic-1000': 950, 'sheep-plastic-500': 500,
   'beef-bulk-10000': 7000, 'sheep-bulk-10000': 9000
 });
-const RESPONSE_HEADERS = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
-const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: RESPONSE_HEADERS });
-const testKey = env => typeof env?.PAYSTACK_SECRET_KEY === 'string' && env.PAYSTACK_SECRET_KEY.startsWith('sk_test_');
-const validReference = value => typeof value === 'string' && /^[A-Za-z0-9._=\-]{6,120}$/.test(value);
-
-async function initialize(request, env) {
-  if (!testKey(env)) return json({ error: 'M-Pesa test checkout is not configured. Add PAYSTACK_SECRET_KEY as a test secret in Cloudflare Pages settings.' }, 503);
-  const origin = request.headers.get('origin');
-  if (origin && origin !== new URL(request.url).origin) return json({ error: 'Invalid checkout origin.' }, 403);
-  if (!(request.headers.get('content-type') || '').toLowerCase().startsWith('application/json')) return json({ error: 'Invalid request type.' }, 415);
-  let input;
-  try { input = await request.json(); } catch (_) { return json({ error: 'Invalid checkout request.' }, 400); }
-  const email = typeof input?.email === 'string' ? input.email.trim() : '';
-  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Please enter a valid test email address.' }, 400);
-  if (!Array.isArray(input?.items) || input.items.length < 1 || input.items.length > 10) return json({ error: 'Shopping cart is empty or invalid.' }, 400);
-  let totalKes = 0;
-  const items = []; const seen = new Set();
-  for (const item of input.items) {
-    if (!item || typeof item.sku !== 'string' || !Object.hasOwn(PRICES, item.sku) || seen.has(item.sku) || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > 20) {
-      return json({ error: 'Invalid product or quantity in shopping cart.' }, 400);
-    }
-    seen.add(item.sku);
-    totalKes += PRICES[item.sku] * item.qty;
-    items.push({ sku: item.sku, qty: item.qty, unit_kes: PRICES[item.sku] });
+const HDR = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' };
+const reply = (data, status=200) => new Response(JSON.stringify(data), {status, headers:HDR});
+const refValid = s => typeof s === 'string' && /^SAFI-[A-Za-z0-9-]{16,100}$/.test(s);
+const allowedMode = env => env?.PAYMENT_MODE === 'live' ? 'live' : env?.PAYMENT_MODE === 'test' ? 'test' : null;
+const secretMatches = (env, mode) => typeof env?.PAYSTACK_SECRET_KEY === 'string' && env.PAYSTACK_SECRET_KEY.startsWith(mode === 'live' ? 'sk_live_' : 'sk_test_') && env.PAYSTACK_SECRET_KEY.length > 15;
+const database = env => env?.ORDER_DB && typeof env.ORDER_DB.prepare === 'function';
+async function setup(env) {
+  const mode=allowedMode(env);
+  if(!mode || env?.PAYMENTS_ENABLED !== 'true' || !secretMatches(env,mode) || !database(env)) return {ready:false,mode:mode||'disabled'};
+  try {
+    // Self-initializing schema so the business owner never has to paste SQL.
+    await env.ORDER_DB.prepare(`CREATE TABLE IF NOT EXISTS orders (
+      reference TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      items_json TEXT NOT NULL,
+      amount_subunits INTEGER NOT NULL CHECK(amount_subunits > 0),
+      currency TEXT NOT NULL CHECK(currency = 'KES'),
+      environment TEXT NOT NULL CHECK(environment IN ('test','live')),
+      status TEXT NOT NULL CHECK(status IN ('created','awaiting_payment','init_failed','paid','failed')),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      paid_at TEXT
+    )`).run();
+    await env.ORDER_DB.prepare('SELECT reference FROM orders LIMIT 1').first();
+  } catch(_) { return {ready:false,mode}; }
+  return {ready:true,mode};
+}
+function getCart(input) {
+  const email=typeof input?.email==='string'?input.email.trim():'';
+  if(email.length>254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw Error('Please enter a valid email.');
+  if(!Array.isArray(input?.items) || input.items.length<1 || input.items.length>10) throw Error('Invalid shopping cart.');
+  const items=[];const seen=new Set();let total=0;
+  for(const item of input.items) {
+    if(!item || typeof item.sku!=='string' || !Object.hasOwn(PRICES,item.sku) || seen.has(item.sku) || !Number.isInteger(item.qty) || item.qty<1 || item.qty>20) throw Error('Invalid cart product or quantity.');
+    seen.add(item.sku);total+=PRICES[item.sku]*item.qty;items.push({sku:item.sku,qty:item.qty,unit_kes:PRICES[item.sku]});
   }
-  if (totalKes < 1 || totalKes > 250000) return json({ error: 'This cart exceeds the test checkout limit.' }, 400);
-  const expected = totalKes * 100;
-  const metadata = { shop: 'Safi Nourish', integration: 'safi-test-v2', environment: 'test', items, expected_amount_kobo: expected, delivery_included: false };
-  try {
-    const response = await fetch('https://api.paystack.co/transaction/initialize', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ email, amount: expected, currency: 'KES', channels: ['mobile_money'], callback_url: `${new URL(request.url).origin}/payment-status.html`, metadata })
-    });
-    const data = await response.json();
-    if (!response.ok || data?.status !== true || typeof data.data?.authorization_url !== 'string' || !validReference(data.data.reference)) {
-      return json({ error: 'Paystack could not start this test payment. Check that test mobile money is enabled for your Paystack account.' }, 502);
-    }
-    const target = new URL(data.data.authorization_url);
-    if (target.protocol !== 'https:' || target.hostname !== 'checkout.paystack.com') return json({ error: 'Unexpected payment destination.' }, 502);
-    return json({ checkout_url: target.href, reference: data.data.reference, subtotal_kes: totalKes, test_mode: true });
-  } catch (_) { return json({ error: 'Unable to connect to Paystack. Please try again later.' }, 502); }
+  if(total<1 || total>250000) throw Error('Cart total exceeds the checkout limit.');
+  return {email,items,amount:total*100,totalKes:total};
 }
-
-async function verify(request, env) {
-  if (!testKey(env)) return json({ error: 'Test verification is not configured. Add PAYSTACK_SECRET_KEY as a test secret in Cloudflare Pages settings.' }, 503);
-  const reference = new URL(request.url).searchParams.get('reference') || '';
-  if (!validReference(reference)) return json({ error: 'Invalid payment reference.' }, 400);
-  try {
-    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
-      headers: { authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}` }
-    });
-    const data = await response.json();
-    if (!response.ok || data?.status !== true || !data.data) return json({ error: 'Paystack could not verify this payment reference.' }, 502);
-    const transaction = data.data;
-    let metadata = transaction.metadata;
-    if (typeof metadata === 'string') { try { metadata = JSON.parse(metadata); } catch (_) { metadata = null; } }
-    if (!metadata || metadata.shop !== 'Safi Nourish' || metadata.integration !== 'safi-test-v2' || metadata.environment !== 'test' || transaction.domain !== 'test' || transaction.currency !== 'KES' || transaction.reference !== reference) {
-      return json({ error: 'This reference is not a Safi Nourish test payment.' }, 400);
-    }
-    if (!Array.isArray(metadata.items) || metadata.items.length < 1 || metadata.items.length > 10) return json({ error: 'Invalid payment product details.' }, 400);
-    let expected = 0; const seen = new Set();
-    for (const item of metadata.items) {
-      if (!item || typeof item.sku !== 'string' || !Object.hasOwn(PRICES, item.sku) || seen.has(item.sku) || !Number.isInteger(item.qty) || item.qty < 1 || item.qty > 20 || item.unit_kes !== PRICES[item.sku]) {
-        return json({ error: 'Invalid payment product details.' }, 400);
-      }
-      seen.add(item.sku);
-      expected += PRICES[item.sku] * item.qty * 100;
-    }
-    if (transaction.amount !== expected || metadata.expected_amount_kobo !== expected || expected > 25000000) return json({ error: 'Paystack amount does not match the order.' }, 400);
-    const status = transaction.status === 'success' ? 'success' : ['failed', 'abandoned', 'reversed'].includes(transaction.status) ? 'failed' : 'pending';
-    return json({ status, reference, subtotal_kes: expected / 100, test_mode: true, delivery_included: false });
-  } catch (_) { return json({ error: 'Payment verification is temporarily unavailable.' }, 502); }
+async function paystackJson(url,env,options={}) {
+  const res=await fetch(url,{...options,headers:{'authorization':`Bearer ${env.PAYSTACK_SECRET_KEY}`, ...(options.headers||{})}});
+  let data;try{data=await res.json();}catch(_){throw Error('Paystack returned an unexpected response.');}
+  if(!res.ok || data?.status!==true || !data.data)throw Error('Paystack could not process the request.');
+  return data.data;
 }
-
+async function initialize(request,env) {
+  const config=await setup(env);
+  if(!config.ready) return reply({error:'Online checkout is temporarily unavailable. Please contact Safi Nourish.'},503);
+  if(request.headers.get('origin') !== SITE_ORIGIN) return reply({error:'Invalid checkout origin.'},403);
+  if(!(request.headers.get('content-type')||'').toLowerCase().startsWith('application/json'))return reply({error:'Invalid request type.'},415);
+  if(Number(request.headers.get('content-length')||0)>8192)return reply({error:'Request is too large.'},413);
+  let input;try{const raw=await request.text();if(raw.length>8192)throw Error();input=JSON.parse(raw);}catch(_){return reply({error:'Invalid checkout request.'},400);}
+  if(input?.delivery_agreed!==true)return reply({error:'Please confirm you understand delivery is charged separately.'},400);
+  let order;try{order=getCart(input);}catch(e){return reply({error:e.message},400);}
+  const reference='SAFI-'+crypto.randomUUID();
+  try {
+    // Record purchase BEFORE Paystack initializes to prevent untracked charges.
+    await env.ORDER_DB.prepare('INSERT INTO orders (reference,email,items_json,amount_subunits,currency,environment,status) VALUES (?,?,?,?,?,?,?)')
+      .bind(reference,order.email,JSON.stringify(order.items),order.amount,'KES',config.mode,'created').run();
+  }catch(_){return reply({error:'Order recording is unavailable. No payment was started. Please try later.'},503);}
+  const metadata={shop:'Safi Nourish',integration:VERSION,order_reference:reference,delivery_included:false};
+  let transaction;
+  try{
+    transaction=await paystackJson('https://api.paystack.co/transaction/initialize',env,{
+      method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({
+        email:order.email,amount:order.amount,currency:'KES',channels:['mobile_money'],
+        reference,callback_url:SITE_ORIGIN+'/payment-status.html',metadata
+      })
+    });
+    const destination=new URL(transaction.authorization_url);
+    if(transaction.reference!==reference || destination.protocol!=='https:' || destination.hostname!=='checkout.paystack.com')throw Error('Payment destination mismatch.');
+    await env.ORDER_DB.prepare("UPDATE orders SET status='awaiting_payment',updated_at=CURRENT_TIMESTAMP WHERE reference=? AND status='created'").bind(reference).run();
+    return reply({checkout_url:destination.href,reference,subtotal_kes:order.totalKes,mode:config.mode});
+  }catch(_){
+    // An initialization error does not imply a charge; keep the order record for audit.
+    try{await env.ORDER_DB.prepare("UPDATE orders SET status='init_failed',updated_at=CURRENT_TIMESTAMP WHERE reference=? AND status='created'").bind(reference).run();}catch(_){}
+    return reply({error:'Could not start payment. Please try again. No order has been confirmed.'},502);
+  }
+}
+async function checkedOrder(reference,env,mode) {
+  const order=await env.ORDER_DB.prepare('SELECT reference,email,items_json,amount_subunits,currency,environment,status FROM orders WHERE reference=?').bind(reference).first();
+  if(!order || order.environment!==mode || order.currency!=='KES') return {error:'Order reference not found.'};
+  const tx=await paystackJson('https://api.paystack.co/transaction/verify/'+encodeURIComponent(reference),env);
+  if(tx.reference!==reference || tx.currency!=='KES' || tx.domain!==mode || tx.amount!==order.amount_subunits || tx.channel!=='mobile_money')return {error:'Payment details do not match the order. Please contact Safi Nourish.'};
+  // Metadata is secondary corroboration; the original D1 record is authoritative.
+  let meta=tx.metadata;if(typeof meta==='string'){try{meta=JSON.parse(meta);}catch(_){meta=null;}}
+  if(meta?.shop!=='Safi Nourish' || meta?.integration!==VERSION || meta?.order_reference!==reference)return {error:'Payment order identity does not match.'};
+  if(tx.status==='success'){
+    await env.ORDER_DB.prepare("UPDATE orders SET status='paid',paid_at=COALESCE(paid_at,CURRENT_TIMESTAMP),updated_at=CURRENT_TIMESTAMP WHERE reference=? AND status!='paid'").bind(reference).run();
+    return {status:'success',subtotal_kes:order.amount_subunits/100};
+  }
+  if(['abandoned','failed'].includes(tx.status)){
+    await env.ORDER_DB.prepare("UPDATE orders SET status='failed',updated_at=CURRENT_TIMESTAMP WHERE reference=? AND status NOT IN ('paid')").bind(reference).run();
+    return {status:'failed',subtotal_kes:order.amount_subunits/100};
+  }
+  return {status:'pending',subtotal_kes:order.amount_subunits/100};
+}
+async function verify(request,env) {
+  const config=await setup(env);
+  if(!config.ready)return reply({error:'Payment verification is temporarily unavailable.'},503);
+  const reference=new URL(request.url).searchParams.get('reference');
+  if(!refValid(reference))return reply({error:'Invalid payment reference.'},400);
+  try {
+    const result=await checkedOrder(reference,env,config.mode);
+    if(result.error)return reply({error:result.error},result.error==='Order reference not found.'?404:409);
+    return reply({...result,reference,mode:config.mode,delivery_included:false});
+  }catch(_){return reply({error:'Payment verification is temporarily unavailable. Please check again or contact Safi Nourish.'},503);}
+}
+async function validSignature(raw,hex,secret) {
+  if(!/^[0-9a-f]{128}$/i.test(hex||''))return false;
+  const enc=new TextEncoder();
+  const key=await crypto.subtle.importKey('raw',enc.encode(secret),{name:'HMAC',hash:'SHA-512'},false,['sign']);
+  const sig=new Uint8Array(await crypto.subtle.sign('HMAC',key,enc.encode(raw)));
+  const their=Uint8Array.from(hex.match(/../g),p=>parseInt(p,16));
+  let diff=0;for(let i=0;i<sig.length;i++)diff|=(sig[i]^their[i]);
+  return diff===0;
+}
+async function webhook(request,env) {
+  const config=await setup(env);
+  if(!config.ready)return reply({error:'Webhook is not configured.'},503);
+  if(Number(request.headers.get('content-length')||0)>300000)return reply({error:'Payload too large.'},413);
+  let raw;try{raw=await request.text();if(raw.length>300000)return reply({error:'Payload too large.'},413);}catch(_){return reply({error:'Invalid payload.'},400);}
+  const signed=await validSignature(raw,request.headers.get('x-paystack-signature'),env.PAYSTACK_SECRET_KEY);
+  if(!signed)return reply({error:'Invalid webhook signature.'},401);
+  let event;try{event=JSON.parse(raw);}catch(_){return reply({error:'Invalid payload.'},400);}
+  if(event?.event!=='charge.success')return reply({received:true});
+  const reference=event?.data?.reference;
+  if(!refValid(reference))return reply({received:true}); // may be another integration using this Paystack account
+  try{
+    const result=await checkedOrder(reference,env,config.mode);
+    if(result.error==='Order reference not found.')return reply({received:true});
+    if(result.error)return reply({error:'Order verification mismatch.'},409);
+    if(result.status!=='success')return reply({error:'Payment not confirmed yet.'},503);
+    return reply({received:true});
+  }catch(_){return reply({error:'Temporary webhook verification issue.'},503);}
+}
 export default {
-  async fetch(request, env) {
-    const path = new URL(request.url).pathname;
-    if (path === '/api/initialize-payment') {
-      if (request.method !== 'POST') return json({ error: 'Use POST to initialize test checkout.' }, 405);
-      return initialize(request, env);
+  async fetch(request,env) {
+    const path=new URL(request.url).pathname;
+    if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
+    // Safety: no checkout on Cloudflare preview deployment or alternate domain.
+    if(new URL(request.url).origin!==SITE_ORIGIN)return reply({error:'Unknown payment endpoint.'},404);
+    if(path==='/api/checkout-config' && request.method==='GET'){
+      const s=await setup(env);return reply({enabled:s.ready,mode:s.ready?s.mode:'disabled'});
     }
-    if (path === '/api/verify-payment') {
-      if (request.method !== 'GET') return json({ error: 'Use GET to verify a test checkout.' }, 405);
-      return verify(request, env);
-    }
-    if (path.startsWith('/api/')) return json({ error: 'Unknown payment API route.' }, 404);
-    return env.ASSETS.fetch(request);
+    if(path==='/api/initialize-payment' && request.method==='POST')return initialize(request,env);
+    if(path==='/api/verify-payment' && request.method==='GET')return verify(request,env);
+    if(path==='/api/paystack-webhook' && request.method==='POST')return webhook(request,env);
+    return reply({error:'Unknown payment endpoint.'},404);
   }
 };

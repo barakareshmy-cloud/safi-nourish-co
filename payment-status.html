@@ -10,21 +10,21 @@
 </style>
 </head>
 <body><main>
-<p class="warning">PAYSTACK TEST MODE — no real M-Pesa charge</p>
+<p class="warning" id="mode">Checking payment environment…</p>
 <h1 id="title">Checking payment status…</h1>
 <p id="message" role="status" aria-live="polite">We are securely checking the transaction with Paystack.</p>
 <p id="reference" class="ref"></p>
-<p>Product subtotal excludes delivery. A successful test does not create a live order.</p>
+<p>Product subtotal excludes delivery. Safi Nourish will arrange any delivery charges separately.</p>
 <button type="button" id="retry">Check status again</button>
 <p class="links"><a href="/shop.html">Return to Safi Nourish shop</a></p>
 </main>
 <script>
 (() => {
  'use strict';
- const title=document.querySelector('#title'),message=document.querySelector('#message'),refEl=document.querySelector('#reference'),retry=document.querySelector('#retry');
- const reference=new URL(location.href).searchParams.get('reference')||'';
- if(!/^[A-Za-z0-9._=\-]{6,120}$/.test(reference)){
-   title.textContent='No payment reference found';message.textContent='Please return to the shop and begin a new test checkout.';retry.disabled=true;return;
+ const title=document.querySelector('#title'),message=document.querySelector('#message'),refEl=document.querySelector('#reference'),retry=document.querySelector('#retry'),modeEl=document.querySelector('#mode');
+ const params=new URL(location.href).searchParams; const reference=params.get('reference')||params.get('trxref')||'';
+ if(!/^SAFI-[A-Za-z0-9-]{16,100}$/.test(reference)){
+   title.textContent='No payment reference found';message.textContent='Please return to the shop and begin a new checkout.';retry.disabled=true;return;
  }
  refEl.textContent='Paystack reference: '+reference;
  let busy=false;
@@ -35,14 +35,16 @@
      const result=await response.json();
      if(!response.ok)throw Error(result.error||'Unable to verify payment');
      if(result.status==='success'){
-       title.textContent='Test payment verified';
-       message.textContent='Paystack confirmed a successful TEST transaction for KSh '+Number(result.subtotal_kes).toLocaleString('en-KE')+'. No real money was collected or order placed.';
+       modeEl.textContent=result.mode==='live'?'LIVE M-PESA PAYMENT VERIFIED':'PAYSTACK TEST TRANSACTION VERIFIED';
+       title.textContent=result.mode==='live'?'Payment received — thank you!':'Test payment verified';
+       message.textContent='Paystack confirmed '+(result.mode==='live'?'your real payment':'a TEST transaction')+' for KSh '+Number(result.subtotal_kes).toLocaleString('en-KE')+'. Your order reference is shown below. Safi Nourish will contact you about delivery. Delivery is not included in this payment.';
+       try{sessionStorage.removeItem('safi-paystack-test-cart-v2');}catch(_){}
      } else if(result.status==='failed'){
-       title.textContent='Test payment not completed';message.textContent='Paystack did not confirm this payment. Please return to the shop and try again.';
+       modeEl.textContent='PAYMENT WAS NOT CONFIRMED';title.textContent='Payment not completed';message.textContent='Paystack did not confirm this payment. If money was deducted, contact Safi Nourish and quote the reference below before trying again.';
      } else {
-       title.textContent='Payment confirmation pending';message.textContent='Paystack has not yet confirmed completion. Please wait and check again. Do not assume the order was paid.';
+       modeEl.textContent='AWAITING PAYMENT CONFIRMATION';title.textContent='Payment confirmation pending';message.textContent='Paystack has not yet confirmed completion. Please wait and check again. Do not submit another payment until the first one is resolved.';
      }
-   }catch(error){title.textContent='Unable to verify payment';message.textContent=error.message||'Please try again in a moment.';}
+   }catch(error){modeEl.textContent='PAYMENT STATUS UNKNOWN';title.textContent='Unable to verify payment';message.textContent='We cannot currently confirm whether your payment was received. Do not pay again. Please contact Safi Nourish with the reference shown below.';}
    finally{busy=false;retry.disabled=false;}
  }
  retry.addEventListener('click',check);check();

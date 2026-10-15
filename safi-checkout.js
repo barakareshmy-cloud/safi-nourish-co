@@ -1,4 +1,4 @@
-/* Safi Nourish — secure catalogue cart for Paystack-hosted TEST checkout.
+/* Safi Nourish — catalogue cart for Paystack-hosted test or live M-Pesa checkout.
    Browser prices are display-only. Cloudflare validates EVERY SKU and price. */
 (() => {
   'use strict';
@@ -14,8 +14,10 @@
     'beef-bulk-10000': ['Beef Tallow · 10L Bulk Bucket', 7000],
     'sheep-bulk-10000': ['Sheep Tallow · 10L Bulk Bucket', 9000]
   });
-  const storeKey = 'safi-paystack-test-cart-v2';
+  const storeKey = 'safi-paystack-test-cart-v2'; // preserve existing shopper baskets on upgrade
   const cart = new Map();
+  let checkoutMode = 'disabled';
+  let checkoutEnabled = false;
   try {
     const saved = JSON.parse(sessionStorage.getItem(storeKey) || '[]');
     if (Array.isArray(saved)) for (const item of saved) {
@@ -53,14 +55,15 @@
   modal.setAttribute('aria-label', 'Safi Nourish shopping cart');
   modal.innerHTML = `
     <div class="safi-header"><h2>Shopping Cart</h2><button type="button" id="safi-close-cart" aria-label="Close shopping cart" style="background:transparent;border:0;cursor:pointer;font-size:25px">×</button></div>
-    <p class="safi-test">PAYSTACK TEST MODE — no real M-Pesa charge</p>
+    <p class="safi-test" id="safi-payment-mode">Checking secure payment availability…</p>
     <div id="safi-cart-lines"></div>
     <p><strong>Product subtotal: <span id="safi-cart-total"></span></strong></p>
-    <p class="safi-note">Delivery is not included in the displayed total and will be arranged separately. Do not submit a real order through the test checkout.</p>
+    <p class="safi-note">Delivery is NOT included in the displayed total. Safi Nourish will arrange delivery and any delivery charges separately.</p>
     <form id="safi-checkout-form">
-      <label for="safi-checkout-email">Email address for test checkout</label>
+      <label for="safi-checkout-email">Email address for your order</label>
       <input id="safi-checkout-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="254" required>
-      <button type="submit" class="safi-primary" id="safi-checkout-pay">Continue to M-Pesa test checkout</button>
+      <label style="display:flex;align-items:flex-start;gap:9px;font-size:13px;line-height:1.5;margin-top:13px"><input id="safi-delivery-agreement" type="checkbox" required style="width:auto;margin:4px 0 0;flex:none">I understand that delivery is not included in the product subtotal and any delivery fee will be arranged separately.</label>
+      <button type="submit" class="safi-primary" id="safi-checkout-pay" disabled>Checking payment service…</button>
     </form>
     <p class="safi-status" role="status" aria-live="polite" id="safi-checkout-message"></p>
     <p class="safi-note"><a href="https://wa.me/254740450447" target="_blank" rel="noopener noreferrer">Contact Safi Nourish about delivery</a></p>`;
@@ -69,6 +72,7 @@
   const totalEl = modal.querySelector('#safi-cart-total');
   const status = modal.querySelector('#safi-checkout-message');
   const payButton = modal.querySelector('#safi-checkout-pay');
+  const modeText = modal.querySelector('#safi-payment-mode');
   function render() {
     lines.replaceChildren();
     let total = 0, count = 0;
@@ -98,9 +102,30 @@
     if (!count) lines.textContent = 'Your cart is empty. Please add a product.';
     button.textContent = `🛒 Cart (${count})`;
     totalEl.textContent = fmt(total);
-    payButton.disabled = !count;
+    payButton.disabled = !count || !checkoutEnabled;
   }
   function openCart() { render(); if (!modal.open) modal.showModal(); }
+  async function loadPaymentConfig(){
+    checkoutEnabled = false;
+    try {
+      const response = await fetch('/api/checkout-config',{cache:'no-store'});
+      if (!response.ok) throw Error('Payment service is unavailable.');
+      const result = await response.json();
+      checkoutEnabled = result.enabled === true && ['test','live'].includes(result.mode);
+      checkoutMode = checkoutEnabled ? result.mode : 'disabled';
+    } catch (_) { checkoutEnabled = false; checkoutMode = 'disabled'; }
+    if (checkoutMode === 'live') {
+      modeText.textContent = 'SECURE LIVE M-PESA PAYMENT — real money will be charged';
+      payButton.textContent = 'Pay securely with M-Pesa';
+    } else if (checkoutMode === 'test') {
+      modeText.textContent = 'PAYSTACK TEST MODE — no real M-Pesa charge';
+      payButton.textContent = 'Continue to M-Pesa test checkout';
+    } else {
+      modeText.textContent = 'Online checkout is not available yet. Please contact Safi Nourish.';
+      payButton.textContent = 'Online payments temporarily unavailable';
+    }
+    render();
+  }
   button.addEventListener('click', openCart);
   modal.querySelector('#safi-close-cart').addEventListener('click', () => modal.close());
   modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
@@ -124,14 +149,14 @@
   modal.querySelector('#safi-checkout-form').addEventListener('submit', async event => {
     event.preventDefault();
     const email = modal.querySelector('#safi-checkout-email').value.trim();
-    if (!cart.size || !email) return;
+    if (!cart.size || !email || !checkoutEnabled || !modal.querySelector('#safi-delivery-agreement').checked) return;
     payButton.disabled = true;
     status.textContent = 'Connecting to Paystack securely…';
     try {
       const response = await fetch('/api/initialize-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, items: [...cart].map(([sku, qty]) => ({ sku, qty })) })
+        body: JSON.stringify({ email, delivery_agreed: true, items: [...cart].map(([sku, qty]) => ({ sku, qty })) })
       });
       const result = await response.json();
       if (!response.ok || !result.checkout_url) throw new Error(result.error || 'Unable to start checkout.');
@@ -144,4 +169,5 @@
     }
   });
   render();
+  loadPaymentConfig();
 })();
