@@ -1,90 +1,25 @@
-SAFI NOURISH — LIVE M-PESA CHECKOUT PREPARATION
-Created: 15 October 2026
+SAFI NOURISH: OLD GITHUB PAGES -> OFFICIAL CLOUDFLARE STORE
 
-IMPORTANT: This package is LIVE-READY, NOT automatically live.
-Your site will REFUSE to take money until all required settings are complete.
-Never send anyone your Paystack secret key. Never put it in GitHub.
+IMPORTANT: DO NOT UPLOAD THESE FILES TO THE main BRANCH!
+They are redirect pages and would replace your LIVE shop if uploaded to main.
 
-WHAT IS INCLUDED
-- _worker.js             Cloudflare API for Paystack payment, validation and webhook
-- safi-checkout.js       Cart that automatically detects test/live/disabled mode
-- payment-status.html   Secure customer payment confirmation page
-- index.html, shop.html, beef.html, sheep.html, bulk.html
-                         Updated storefront pages and cart script cache refresh
+They must go on a SEPARATE branch called gh-pages, and GitHub Pages
+Settings > Pages must publish from branch gh-pages / (root).
+Cloudflare Pages must remain on main, as it is now.
 
-STEP 1 — UPDATE GITHUB
-1. Extract the ZIP.
-2. Open https://github.com/barakareshmy-cloud/safi-nourish-co
-3. Choose Add file > Upload files.
-4. Upload ONLY the eight website files listed above, NOT the ZIP and NOT any photos.
-5. Commit changes; wait for the Cloudflare Pages Production deployment to succeed.
-This is safe to deploy before the payment settings because payments default to OFF.
+1. In GitHub repo, create a new branch named gh-pages from main.
+2. Select the gh-pages branch in the GitHub file browser.
+3. Use Add file > Upload files to upload the TEN .html files from this folder.
+   (Do NOT upload the ZIP itself.)
+4. Confirm in the commit page that the selected branch is gh-pages.
+5. In Settings > Pages: Source = Deploy from a branch;
+   Branch = gh-pages; Folder = /(root). Save.
+6. Wait for GitHub Pages deployment and test
+   https://barakareshmy-cloud.github.io/safi-nourish-co/
+   It should move automatically to https://safi-nourish-co.pages.dev/
 
-STEP 2 — CREATE ORDER DATABASE (CLOUDFLARE)
-1. Open https://dash.cloudflare.com and choose Workers & Pages > D1 SQL Database.
-2. Create a D1 database named safi_nourish_orders.
-3. Go to Workers & Pages > safi-nourish-co > Settings > Bindings.
-4. Under Production, add D1 database binding:
-       Binding variable name: ORDER_DB
-       Database: safi_nourish_orders
-5. Save. The table creates itself automatically once configured.
+This change DOES NOT make Google update its result immediately.
+Google must recrawl the GitHub Pages address, which may take time.
 
-STEP 3 — CONFIGURE ENVIRONMENT VARIABLES IN CLOUDFLARE
-In Pages > safi-nourish-co > Settings > Variables and Secrets (PRODUCTION), add:
-  PAYMENT_MODE       live      (plain text variable)
-  PAYMENTS_ENABLED   false     (plain text variable; KEEP FALSE at this stage)
-  PAYSTACK_SECRET_KEY        (encrypted SECRET containing your real sk_live_... key)
-If PAYSTACK_SECRET_KEY already exists, edit its production value to the live secret
-only in Cloudflare. Never paste it into ChatGPT, email, files or GitHub.
-See the Paystack Live Secret Key in Dashboard > Settings > API Keys & Webhooks.
-Save settings and redeploy the latest Cloudflare Pages Production deployment.
-
-STEP 4 — ENABLE SIGNED PAYSTACK WEBHOOK
-In your Paystack Dashboard LIVE Mode settings, set the live webhook URL to:
-  https://safi-nourish-co.pages.dev/api/paystack-webhook
-This endpoint checks Paystack's cryptographic SHA-512 signature, then independently
-verifies the transaction amount, currency, original order and environment.
-Check the Paystack webhook dashboard for delivery/response status.
-
-STEP 5 — FINAL REVIEW, THEN OPT IN TO LIVE
-Confirm database binding, production live secret, webhook and business fulfilment.
-In Cloudflare Production environment change:
-  PAYMENTS_ENABLED   true
-Save and redeploy.
-Open https://safi-nourish-co.pages.dev/api/checkout-config
-EXPECTED RESULT: {"enabled":true,"mode":"live"}
-If not enabled, DO NOT take money; the website will show payment unavailable.
-
-STEP 6 — ONE REAL TEST PURCHASE
-Choose your own lowest priced product (Beef Tallow 500g Plastic Jar, KSh 350).
-This is a REAL transaction using REAL money and may incur fees.
-Ensure you deliberately intend to make this payment.
-Verify Paystack Live Transactions: completed SUCCESS and exact KSh amount.
-Verify Cloudflare D1 > safi_nourish_orders > orders:
-  matching reference, 'paid' status, correct email/items/amount.
-Check the return page says 'Payment received — thank you'.
-If anything is inconsistent, switch PAYMENTS_ENABLED back to false immediately.
-
-BUSINESS OPERATIONS — IMPORTANT
-- Delivery is NOT charged in this checkout; arrange and collect delivery
-  fees separately only after telling the customer the amount.
-- There is NO automatic email to the shop owner yet. The owner must regularly
-  inspect Paystack Live transactions and the Cloudflare D1 orders database.
-- Do NOT fulfil until both Paystack and the database confirm 'paid'.
-- Check refunds, reversals and disputes in Paystack before dispatch.
-- Store buyer email and order details responsibly; D1 contains customer data.
-- A live checkout will be publicly available after enabling. Switch back off
-  quickly using PAYMENTS_ENABLED=false if problems arise.
-
-PRODUCT PRICES (KES) — VERIFIED FROM SUPPLIED SITE
-Beef glass 1kg 850; 500g 450. Beef plastic 1kg 750; 500g 350.
-Sheep glass 1kg 1150; 500g 600. Sheep plastic 1kg 950; 500g 500.
-Beef bulk 10L 7000; sheep bulk 10L 9000.
-18 homepage product displays represent 10 unique SKUs.
-
-SECURITY NOTES
-No secret keys are included in this ZIP. Prices are validated server-side.
-Order records are saved before payment starts. Webhook signatures are verified.
-Payment references are random and not customer data. Unrecognized references,
-wrong amounts, wrong channel, wrong environment and preview domains are rejected.
-No real money can be collected until the explicit enabled flag is set.
+The old GitHub Pages address should not collect real payments.
+Do not change Cloudflare checkout settings or Paystack secrets.
