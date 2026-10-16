@@ -1,0 +1,19 @@
+SAFI NOURISH — RESTORE CLOUDFLARE MAIN WEBSITE
+
+Why: Redirect pages were mistakenly uploaded to the MAIN branch, causing the Cloudflare shop to redirect to itself.
+
+1. Download this ZIP and Extract All.
+2. Open https://github.com/barakareshmy-cloud/safi-nourish-co
+3. VERY IMPORTANT: select MAIN branch, NOT gh-pages.
+4. Choose Add file > Upload files.
+5. Upload ONLY the ten .html files in this ZIP. When asked to replace files, allow.
+6. Commit changes directly to MAIN.
+7. Wait for Cloudflare Pages Production deployment Success.
+8. Open https://safi-nourish-co.pages.dev/ in a new incognito window.
+9. Check https://safi-nourish-co.pages.dev/shop.html too.
+
+DO NOT upload redirects to MAIN. Do NOT upload _worker.js, safi-checkout.js or any images. DO NOT click Compare & pull request.
+
+PAYMENT SAFETY: While site is being repaired, set PAYMENTS_ENABLED=false in Cloudflare Production variables and redeploy that setting. Restore pages first and verify before enabling real customer checkout again.
+
+The five product/shop pages are from the last secure live checkout package, and the remaining five pages are from your earlier saved full-site ZIP. Check the restored pages visually before promoting them.
