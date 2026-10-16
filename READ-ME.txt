@@ -1,0 +1,10 @@
+SAFE CART REPAIR — Safi Nourish
+
+1. Extract the ZIP.
+2. Upload only safi-checkout.js to the ROOT of the GitHub repository barakareshmy-cloud/safi-nourish-co, replacing the existing file.
+3. Commit and wait for the Cloudflare Pages deployment to succeed.
+4. Open https://safi-nourish-co.pages.dev/ (not GitHub Pages).
+5. Open the cart; it now re-checks /api/checkout-config on every opening.
+6. If enabled=true, the cart shows live checkout. If not, it displays a more specific diagnostic.
+
+IMPORTANT: Payments are REAL if the live checkout button appears. Do NOT pay until advised and confirm order recording and verification. Never share payment secret keys or copy them into website files.

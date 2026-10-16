@@ -104,24 +104,57 @@
     totalEl.textContent = fmt(total);
     payButton.disabled = !count || !checkoutEnabled;
   }
-  function openCart() { render(); if (!modal.open) modal.showModal(); }
+  function openCart() { render(); if (!modal.open) modal.showModal(); void loadPaymentConfig(); }
+  // Recheck on every cart opening. Never cache or assume payment readiness.
+  let configRequestId = 0;
   async function loadPaymentConfig(){
+    const requestId = ++configRequestId;
     checkoutEnabled = false;
+    checkoutMode = 'disabled';
+    modeText.textContent = 'Checking live M-Pesa availability…';
+    payButton.textContent = 'Checking secure checkout…';
+    render();
+    const liveHost = 'safi-nourish-co.pages.dev';
+    if (location.hostname !== liveHost) {
+      modeText.textContent = 'This is not the live Safi Nourish checkout website.';
+      status.replaceChildren();
+      const link = document.createElement('a');
+      link.href = 'https://' + liveHost + '/';
+      link.textContent = 'Open Safi Nourish’s live Cloudflare website to place your order.';
+      status.append(link);
+      payButton.textContent = 'Checkout available on the live website only';
+      render();
+      return;
+    }
+    let problem = '';
     try {
-      const response = await fetch('/api/checkout-config',{cache:'no-store'});
-      if (!response.ok) throw Error('Payment service is unavailable.');
+      const response = await fetch('/api/checkout-config?check=' + Date.now(), {
+        cache: 'no-store', redirect: 'error', headers: { 'Accept': 'application/json' }
+      });
+      if (!response.ok) throw Error('The payment settings API returned HTTP ' + response.status + '.');
+      const type = response.headers.get('content-type') || '';
+      if (!type.includes('application/json')) throw Error('The payment settings API returned a web page instead of JSON.');
       const result = await response.json();
+      if (requestId !== configRequestId) return;
       checkoutEnabled = result.enabled === true && ['test','live'].includes(result.mode);
       checkoutMode = checkoutEnabled ? result.mode : 'disabled';
-    } catch (_) { checkoutEnabled = false; checkoutMode = 'disabled'; }
+      if (!checkoutEnabled) problem = 'Cloudflare reports that live checkout is disabled. Please contact Safi Nourish.';
+    } catch (error) {
+      if (requestId !== configRequestId) return;
+      checkoutEnabled = false;
+      checkoutMode = 'disabled';
+      problem = 'Payment connection check failed: ' + (error?.message || 'network error') + '. Please contact Safi Nourish.';
+    }
     if (checkoutMode === 'live') {
       modeText.textContent = 'SECURE LIVE M-PESA PAYMENT — real money will be charged';
       payButton.textContent = 'Pay securely with M-Pesa';
+      status.textContent = '';
     } else if (checkoutMode === 'test') {
       modeText.textContent = 'PAYSTACK TEST MODE — no real M-Pesa charge';
       payButton.textContent = 'Continue to M-Pesa test checkout';
+      status.textContent = '';
     } else {
-      modeText.textContent = 'Online checkout is not available yet. Please contact Safi Nourish.';
+      modeText.textContent = problem;
       payButton.textContent = 'Online payments temporarily unavailable';
     }
     render();
