@@ -315,78 +315,142 @@ main > .gallery-feature{margin-bottom:75px;}
 @media(max-width:920px){.safi-map-grid{grid-template-columns:1fr;}.safi-map-frame,.safi-map-frame iframe{min-height:360px;}}
 
 
-/* SAFI NOURISH · PREMIUM MOBILE FINISH · 2026-10-19
-   Styling-only enhancement. Checkout, orders and payment backend untouched. */
-:root { --safi-radius:18px; --safi-shadow:0 12px 35px rgba(18,55,37,.075); }
-html { scroll-padding-top:105px; }
-body { overflow-x:clip; }
-button, a, input, textarea, select { -webkit-tap-highlight-color:transparent; }
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,
-textarea:focus-visible { outline:3px solid #bb9045; outline-offset:3px; }
-.site-header { box-shadow:0 7px 24px rgba(15,42,27,.045); }
-.navigation a { transition:color .18s ease; }
-.navigation a.active, .navigation a[aria-current="page"] { color:#0c6240; }
-.actual-shelf-card, .grouped-card { border-radius:var(--safi-radius);box-shadow:var(--safi-shadow);transition:box-shadow .2s ease,transform .2s ease; }
-.actual-shelf-card:hover, .grouped-card:hover { box-shadow:0 18px 40px rgba(16,55,37,.12); }
-.actual-price { color:#153c2d; font-weight:800; font-variant-numeric:tabular-nums; }
-.actual-shelf-body { gap:7px; }
-.actual-shelf-body h3 { overflow-wrap:break-word; }
-.actual-shop-btn { transition:background .2s ease, transform .2s ease; }
-.actual-shop-btn:focus-visible { outline:3px solid #b48a3c; outline-offset:3px; }
-.safi-location .safi-address-card { border-radius:var(--safi-radius); }
-/* Friendly medium layouts (preserve intentional 4-column desktop product display). */
-@media (min-width:701px) and (max-width:1050px) {
-  .shell { width:min(100% - 48px,1220px); }
-  .actual-shelf-grid.grouped-row { grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:18px; }
-  .actual-shelf-grid.grouped-row.bulk-row { grid-template-columns:repeat(2,minmax(0,1fr)) !important; }
+/* ===========================================================
+  SAFI NOURISH 2026 — EDITORIAL PREMIUM STOREFRONT
+  Visual-only overrides. Payment scripts / SKU data untouched.
+ =========================================================== */
+:root {--safi-ink:#163628;--safi-green:#153e2d;--safi-olive:#667b55;--safi-gold:#b08b4e;--safi-paper:#fbf9f3;--safi-ivory:#f2ede3;--safi-stroke:#e5ded2;--safi-shadow:0 20px 52px rgba(20,44,30,.075)}
+html {scroll-behavior:smooth;scroll-padding-top:110px}
+body {background:var(--safi-paper)!important;color:var(--safi-ink);-webkit-font-smoothing:antialiased}
+button,a { -webkit-tap-highlight-color:transparent }
+:focus-visible {outline:3px solid #b99558;outline-offset:3px}
+.announcement {background:#16392b!important;color:#f7f1df!important;font-size:10px!important;letter-spacing:.22em!important;font-weight:650!important;text-align:center;padding:12px 15px!important}
+.site-header {position:sticky!important;top:0;z-index:80;background:rgba(253,251,247,.96)!important;border-bottom:1px solid #eae5dc!important;box-shadow:0 4px 24px rgba(25,44,32,.04)!important;backdrop-filter:blur(18px)}
+.nav-wrap {min-height:88px!important;gap:18px}
+.brand-logo-img {width:auto;max-width:64px;max-height:58px;object-fit:contain}
+.brand-words strong {font-family:Georgia,serif;letter-spacing:-.04em;font-size:clamp(19px,2vw,25px)}
+.navigation a {font-size:12px!important;letter-spacing:.065em!important;font-weight:650!important;text-transform:uppercase;white-space:nowrap}
+.whatsapp-link {border-radius:100px!important;padding:13px 20px!important;border:1px solid #d8c8a7!important;background:transparent!important;color:#254b38!important;font-weight:700!important;font-size:12px!important}
+.whatsapp-link:hover {background:#f3e7d2!important}
+.approved-hero {overflow:hidden;min-height:690px!important;background:#f5f0e8!important}
+.approved-hero .hero-photo-inner {min-height:690px!important;padding:90px 0!important}
+.approved-hero-picture {background-position:61% center!important;width:63%!important}
+.approved-hero:after {background:linear-gradient(90deg,#f8f5ee 0%,#f8f5ee 30%,rgba(248,245,238,.95) 43%,rgba(248,245,238,.49) 60%,rgba(248,245,238,.03) 84%)!important}
+.approved-hero .hero-panel {max-width:590px!important;padding:0!important;background:transparent!important;box-shadow:none!important;border:0!important;backdrop-filter:none!important}
+.approved-hero .eyebrow {font-size:11px;letter-spacing:.2em;color:#9a7540;font-weight:750}
+.approved-hero h1 {font-family:Georgia,'Times New Roman',serif!important;font-weight:400!important;font-size:clamp(66px,7.2vw,110px)!important;line-height:1.02!important;letter-spacing:-.065em!important;margin:30px 0 24px!important;color:#183f2f!important}
+.approved-hero h1 em {font-style:italic!important;font-weight:400!important;color:#9e7540!important}
+.approved-hero .hero-panel p {font-size:clamp(16px,1.4vw,18px)!important;max-width:480px!important;line-height:1.9!important;color:#526154!important}
+.approved-hero .hero-buttons {margin-top:32px!important}
+.button-dark,.actual-shop-btn {background:#1b4935!important;color:white!important;border:1px solid #1b4935!important;text-decoration:none!important;font-weight:750!important;letter-spacing:.015em}
+.button-dark {border-radius:7px!important;padding:17px 30px!important;box-shadow:0 9px 21px rgba(25,68,47,.12)}
+.button-dark:hover,.actual-shop-btn:hover {background:#0d3020!important;box-shadow:0 12px 28px rgba(15,49,33,.2)!important;transform:translateY(-2px)}
+.approved-hero .hero-trust {color:#5b6d5e!important;gap:23px!important;letter-spacing:.035em!important}
+.benefit-bar {background:#e9e7dd!important;border-top:1px solid #e1ded4!important;border-bottom:1px solid #e1ded4!important}
+.benefit-grid {padding:22px 0!important;gap:18px!important}
+.benefit-grid span {font-size:10px!important;font-weight:750;letter-spacing:.15em!important;color:#35543e!important;text-align:center}
+/* Editorial category entry points */
+.safi-category-intro {padding:100px 0 74px}
+.safi-category-heading {text-align:center;max-width:730px;margin:0 auto 36px}
+.safi-category-heading .safi-kicker {font-size:11px;letter-spacing:.25em;text-transform:uppercase;color:#9c7848;font-weight:800}
+.safi-category-heading h2 {font:400 clamp(38px,4.5vw,65px)/1.1 Georgia,serif;color:var(--safi-green);letter-spacing:-.045em;margin:14px 0}
+.safi-category-heading p {color:#687368;font-size:15px;line-height:1.8}
+.safi-category-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.safi-category-tile {position:relative;min-height:400px;overflow:hidden;border-radius:9px;background:#eae2d3;text-decoration:none!important;isolation:isolate;box-shadow:0 12px 30px rgba(23,48,31,.07)}
+.safi-category-tile img {position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .65s ease}
+.safi-category-tile:after {content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,34,22,.02) 25%,rgba(13,39,26,.84) 100%);z-index:1}
+.safi-category-tile:hover img {transform:scale(1.055)}
+.safi-category-label {position:absolute;bottom:0;left:0;right:0;padding:30px 29px;color:white;z-index:2;display:flex;align-items:end;justify-content:space-between;gap:10px}
+.safi-category-label span {font:400 clamp(27px,2.6vw,37px)/1.1 Georgia,serif;letter-spacing:-.025em}
+.safi-category-label small {font-size:11px;letter-spacing:.14em;text-transform:uppercase;display:block;opacity:.84;margin-top:10px;font-weight:750}
+.safi-category-arrow {border:1px solid rgba(255,255,255,.65);width:39px;height:39px;display:grid;place-items:center;border-radius:50%;font-size:20px;flex:none}
+.section-heading h2,.home-moments-title h2 {font-family:Georgia,serif!important;font-weight:400!important;letter-spacing:-.045em!important;color:#17412e!important}
+.homepage-product-shelf {padding-top:70px!important}
+.section-heading-tight {align-items:end!important;margin-bottom:52px!important}
+.section-heading-tight .eyebrow {font-size:11px;letter-spacing:.21em;text-transform:uppercase;color:#987247;font-weight:800}
+.section-copy {max-width:410px!important;font-size:14px!important;line-height:1.85!important;color:#718073!important}
+.grouped-shelf-wrapper {gap:75px!important}
+.product-group {gap:25px!important}
+.product-group-heading {border-bottom:1px solid #cfcdbd!important;padding-bottom:19px!important}
+.product-group-heading h3 {font:400 clamp(35px,3.5vw,51px)/1.06 Georgia,serif!important;letter-spacing:-.045em!important}
+.product-group-heading p {font-size:12px!important;color:#819083!important;letter-spacing:.02em}
+.actual-shelf-grid.grouped-row {gap:21px!important}
+.actual-shelf-card {border-radius:9px!important;background:#fffefb!important;border:1px solid #e8e6de!important;box-shadow:0 8px 30px rgba(22,43,28,.045)!important;transition:transform .25s,box-shadow .25s,border-color .25s}
+.actual-shelf-card:hover {transform:translateY(-5px);box-shadow:var(--safi-shadow)!important;border-color:#dacbb1!important}
+.actual-shelf-image {height:260px!important;min-height:260px!important;background:#f3f0e8!important;padding:22px!important;position:relative}
+.actual-shelf-image:after {content:'SAFI NOURISH';position:absolute;top:14px;left:17px;letter-spacing:.17em;font-size:9px;font-weight:800;color:#718472;opacity:.85}
+.actual-shelf-image img {width:100%!important;height:100%!important;object-fit:contain!important;max-height:none!important;mix-blend-mode:multiply;transition:transform .35s}
+.actual-shelf-card:hover img {transform:scale(1.04)}
+.actual-shelf-body {padding:23px!important;gap:9px!important}
+.actual-shelf-body h3 {font:400 clamp(19px,1.65vw,24px)/1.24 Georgia,serif!important;color:#183e2d!important;letter-spacing:-.024em!important}
+.actual-price {font-size:21px!important;font-weight:800!important;color:#9b7541!important;letter-spacing:-.04em!important;margin-top:7px!important}
+.actual-desc {font-size:13px!important;line-height:1.75!important;color:#687567!important}
+.actual-meta {font-size:11px!important;color:#7d897b!important;line-height:1.8!important;margin:5px 0 13px!important}
+.actual-meta li {margin-bottom:2px!important}
+.actual-shop-btn {margin-top:auto!important;text-align:center!important;border-radius:5px!important;padding:13px 12px!important;min-height:46px;display:flex!important;align-items:center;justify-content:center;font-size:12px!important}
+.featured-placement {display:none!important}
+.image-break-card {border-radius:8px;background:rgba(252,249,240,.96)!important;box-shadow:0 18px 46px rgba(0,0,0,.12)!important}
+.gallery-feature {border-radius:10px;overflow:hidden}
+footer {background:#133a2a!important;color:#f5efdf!important}
+footer a,footer p {color:#d8e0d4!important}
+.footer-bottom {border-top:1px solid rgba(255,255,255,.17)!important;line-height:1.8}
+/* Compact phone layouts without sacrificing product legibility */
+@media (max-width:960px){
+ .safi-category-intro {padding:62px 0 45px}
+ .safi-category-tile {min-height:315px}
+ .safi-category-label {padding:22px}
+ .actual-shelf-grid.grouped-row {grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .actual-shelf-grid.grouped-row.bulk-row {grid-template-columns:repeat(2,minmax(0,1fr))!important;max-width:none!important}
+ .approved-hero .hero-photo-inner {min-height:600px!important}
 }
-@media (max-width:760px) {
-  .shell { width:calc(100% - 32px); }
-  .site-header { position:sticky;top:0; }
-  .nav-wrap { height:72px;gap:10px; }
-  .menu-toggle { min-width:44px;min-height:44px;border-radius:10px;background:#f0f4ef;color:#133d2a;display:grid;place-items:center; }
-  .navigation { top:72px;border-top:1px solid #e8e5da;border-radius:0 0 16px 16px;z-index:32; }
-  .navigation a { min-height:44px;display:flex;align-items:center;font-size:15px; }
-  .brand-logo-img { max-width:44px;max-height:44px; }
-  .brand-words strong { font-size:clamp(21px,5.3vw,28px);letter-spacing:-.8px; }
-  .announcement { font-size:9px;line-height:1.45;letter-spacing:.8px;padding:8px 12px; }
-  .announcement .dot { padding:0 5px; }
-  .section { scroll-margin-top:90px; }
-  .section-heading h1,.section-heading h2 { line-height:1.16; }
-  .grouped-shelf-wrapper { gap:34px !important; }
-  .product-group { gap:14px; }
-  .product-group-heading { gap:5px;padding-bottom:12px !important; }
-  .product-group-heading h3 { font-size:clamp(25px,7vw,34px) !important; }
-  .product-group-heading p { font-size:13px;line-height:1.6; }
-  .actual-shelf-grid.grouped-row,.actual-shelf-grid.grouped-row.bulk-row { grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:12px !important;max-width:none !important; }
-  .grouped-card .actual-shelf-image { height:190px !important;min-height:190px !important;padding:10px !important; }
-  .grouped-card .actual-shelf-image img { max-height:170px !important; }
-  .grouped-card .actual-shelf-body { padding:14px 12px 16px !important;gap:6px; }
-  .grouped-card .actual-shelf-body h3 { font-size:15px !important;line-height:1.35 !important;margin:0 0 4px; }
-  .grouped-card .actual-price { font-size:16px !important;line-height:1.25; }
-  .grouped-card .actual-desc { font-size:12px !important;line-height:1.5 !important; }
-  .grouped-card .actual-meta { font-size:12px !important;line-height:1.5; }
-  .grouped-card .actual-shop-btn { min-height:46px !important;font-size:13px !important;padding:10px 8px !important; }
-  .safi-location { padding:24px 0 56px; }
-  .safi-address-card { padding:21px; }
-  .safi-map-grid { grid-template-columns:minmax(0,1fr); }
-  .safi-map-frame, .safi-map-frame iframe { min-height:300px; }
+@media (max-width:680px){
+ .announcement {font-size:9px!important;letter-spacing:.09em!important;line-height:1.5!important;padding:9px 15px!important}
+ .nav-wrap {min-height:69px!important}
+ .brand-logo-img {max-height:48px}
+ .navigation {z-index:90}
+ .whatsapp-link {padding:9px 12px!important;font-size:11px!important}
+ .approved-hero {min-height:645px!important;background:#f3eee4!important}
+ .approved-hero-picture {top:0!important;bottom:auto!important;width:100%!important;height:57%!important;background-size:cover!important;background-position:center 45%!important;opacity:1!important}
+ .approved-hero:after {background:linear-gradient(180deg,rgba(248,245,238,0) 12%,rgba(248,245,238,.04) 34%,#f8f5ee 56%,#f8f5ee 100%)!important}
+ .approved-hero .hero-photo-inner {min-height:645px!important;padding:275px 0 38px!important;align-items:flex-end!important}
+ .approved-hero .hero-panel {max-width:100%!important}
+ .approved-hero .eyebrow {font-size:9px!important;letter-spacing:.13em!important}
+ .approved-hero h1 {font-size:clamp(45px,11vw,67px)!important;line-height:1!important;margin:12px 0!important}
+ .approved-hero .hero-panel p {font-size:13px!important;line-height:1.65!important}
+ .approved-hero .hero-buttons {margin-top:19px!important}
+ .button-dark {padding:13px 20px!important;font-size:12px!important}
+ .approved-hero .hero-trust {margin-top:18px!important;font-size:10px!important;gap:6px 13px!important}
+ .benefit-grid {display:grid!important;grid-template-columns:1fr 1fr;gap:10px!important;padding:15px 0!important}
+ .benefit-grid span {font-size:8px!important;letter-spacing:.07em!important;line-height:1.5}
+ .safi-category-intro {padding:51px 0 24px}
+ .safi-category-heading {margin-bottom:24px}
+ .safi-category-heading h2 {font-size:40px!important}
+ .safi-category-heading p {font-size:13px}
+ .safi-category-grid {grid-template-columns:1fr 1fr;gap:11px}
+ .safi-category-tile {min-height:220px}
+ .safi-category-tile:nth-child(3) {grid-column:1/-1;min-height:185px}
+ .safi-category-label {padding:15px}
+ .safi-category-label span {font-size:23px}
+ .safi-category-label small {font-size:9px;margin-top:6px}
+ .safi-category-arrow {width:27px;height:27px;font-size:15px}
+ .homepage-product-shelf {padding-top:43px!important}
+ .section-heading-tight {gap:15px!important;margin-bottom:30px!important}
+ .section-heading-tight h2 {font-size:35px!important}
+ .section-copy {font-size:12px!important}
+ .grouped-shelf-wrapper {gap:50px!important}
+ .product-group-heading h3 {font-size:32px!important}
+ .product-group-heading p {font-size:11px!important}
+ .actual-shelf-grid.grouped-row,.actual-shelf-grid.grouped-row.bulk-row {grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+ .actual-shelf-card {border-radius:7px!important}
+ .actual-shelf-image {height:170px!important;min-height:170px!important;padding:12px!important}
+ .actual-shelf-image:after {font-size:7px;left:9px;top:9px}
+ .actual-shelf-body {padding:13px!important;gap:7px!important}
+ .actual-shelf-body h3 {font-size:16px!important;line-height:1.25!important}
+ .actual-price {font-size:17px!important;margin-top:2px!important}
+ .actual-desc {font-size:11px!important;line-height:1.55!important}
+ .actual-meta {display:none!important}
+ .actual-shop-btn {font-size:11px!important;min-height:42px!important;padding:9px 8px!important}
+ .footer-bottom {font-size:11px!important;overflow-wrap:anywhere}
 }
-@media (max-width:420px) {
-  .approved-hero { min-height:680px !important; }
-  .approved-hero .hero-photo-inner { min-height:680px !important;padding:27px 0 300px !important; }
-  .approved-hero-picture { height:43% !important; }
-  .approved-hero h1 { font-size:clamp(39px,10.5vw,48px) !important;letter-spacing:-1.5px; }
-  .approved-hero .hero-panel p { font-size:14px !important;line-height:1.65 !important; }
-  .grouped-card .actual-shelf-image { height:154px !important;min-height:154px !important; }
-  .grouped-card .actual-shelf-image img { max-height:137px !important; }
-  .grouped-card .actual-shelf-body { padding:12px 10px 14px !important; }
-  .grouped-card .actual-shelf-body h3 { font-size:13.5px !important; }
-  .grouped-card .actual-price { font-size:15px !important; }
-  .grouped-card .actual-desc { font-size:11.5px !important; }
-  .grouped-card .actual-meta { font-size:11.5px !important; }
-  .grouped-card .actual-shop-btn { font-size:12px !important; }
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior:auto !important;transition:none !important;animation:none !important; }
-}
+@media(max-width:355px){.actual-shelf-grid.grouped-row,.actual-shelf-grid.grouped-row.bulk-row {grid-template-columns:1fr!important}.actual-shelf-image {height:240px!important;min-height:240px!important}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
