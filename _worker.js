@@ -185,12 +185,74 @@ async function webhook(request,env) {
     return reply({received:true});
   }catch(_){return reply({error:'Temporary webhook verification issue.'},503);}
 }
+
+// Safi Nourish staff orders API. Keeps payment state strictly read-only.
+const ADMIN_HDR={'content-type':'application/json; charset=utf-8','cache-control':'no-store, private','x-content-type-options':'nosniff','referrer-policy':'no-referrer','x-frame-options':'DENY'};
+const adminReply=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:ADMIN_HDR});
+async function adminAuthorized(request,env){
+ const expected=env?.SAFI_ADMIN_KEY;
+ if(typeof expected!=='string'||expected.length<40)return false;
+ const supplied=request.headers.get('authorization')||'';
+ if(!supplied.startsWith('Bearer '))return false;
+ const got=supplied.slice(7);
+ const a=new TextEncoder().encode(expected),b=new TextEncoder().encode(got);
+ if(a.length!==b.length)return false;
+ let mismatch=0;for(let i=0;i<a.length;i++)mismatch|=a[i]^b[i];return mismatch===0;
+}
+async function adminDb(env){
+ if(!database(env))throw Error('Order database unavailable');
+ await env.ORDER_DB.prepare(`CREATE TABLE IF NOT EXISTS order_fulfilment (
+   reference TEXT PRIMARY KEY,
+   fulfilment_status TEXT NOT NULL DEFAULT 'not_started' CHECK(fulfilment_status IN ('not_started','preparing','dispatched','delivered','cancelled')),
+   delivery_note TEXT NOT NULL DEFAULT '',
+   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+ )`).run();
+}
+async function adminOrders(request,env){
+ if(!await adminAuthorized(request,env))return adminReply({error:'Not authorized. Check your admin key.'},401);
+ try{
+  await adminDb(env);
+  if(request.method==='GET'){
+    const url=new URL(request.url);
+    const requested=url.searchParams.get('status')||'all';
+    const allowed=['all','paid','awaiting_payment','failed','created','init_failed'];
+    if(!allowed.includes(requested))return adminReply({error:'Invalid filter.'},400);
+    const sql=`SELECT o.reference,o.email,o.items_json,o.amount_subunits,o.currency,o.environment,o.status,o.created_at,o.updated_at,o.paid_at,
+      COALESCE(f.fulfilment_status,'not_started') AS fulfilment_status, COALESCE(f.delivery_note,'') AS delivery_note
+      FROM orders o LEFT JOIN order_fulfilment f ON o.reference=f.reference
+      ${requested==='all'?'':'WHERE o.status=?'} ORDER BY o.created_at DESC LIMIT 200`;
+    const q=env.ORDER_DB.prepare(sql);
+    const rows=await (requested==='all'?q:q.bind(requested)).all();
+    return adminReply({orders:(rows.results||[]).map(row=>{let items=[];try{items=JSON.parse(row.items_json);}catch(_){}delete row.items_json;return {...row,items,amount_kes:row.amount_subunits/100};}),limit:200});
+  }
+  if(request.method==='POST'){
+    if(!(request.headers.get('content-type')||'').startsWith('application/json'))return adminReply({error:'JSON required.'},415);
+    const raw=await request.text();if(raw.length>6000)return adminReply({error:'Request too long.'},413);
+    let body;try{body=JSON.parse(raw);}catch(_){return adminReply({error:'Invalid JSON.'},400);}
+    if(!refValid(body?.reference))return adminReply({error:'Invalid reference.'},400);
+    const states=['not_started','preparing','dispatched','delivered','cancelled'];
+    if(!states.includes(body?.fulfilment_status))return adminReply({error:'Invalid delivery status.'},400);
+    const note=typeof body?.delivery_note==='string'?body.delivery_note.trim():'';
+    if(note.length>1000)return adminReply({error:'Delivery note too long.'},400);
+    const order=await env.ORDER_DB.prepare('SELECT status FROM orders WHERE reference=?').bind(body.reference).first();
+    if(!order)return adminReply({error:'Order not found.'},404);
+    if(order.status!=='paid' && body.fulfilment_status!=='not_started')return adminReply({error:'Only verified paid orders can move through delivery stages.'},409);
+    await env.ORDER_DB.prepare(`INSERT INTO order_fulfilment (reference,fulfilment_status,delivery_note,updated_at) VALUES (?,?,?,CURRENT_TIMESTAMP)
+      ON CONFLICT(reference) DO UPDATE SET fulfilment_status=excluded.fulfilment_status, delivery_note=excluded.delivery_note,updated_at=CURRENT_TIMESTAMP`)
+      .bind(body.reference,body.fulfilment_status,note).run();
+    return adminReply({saved:true,reference:body.reference});
+  }
+  return adminReply({error:'Method not supported.'},405);
+ }catch(_){return adminReply({error:'Admin database request failed.'},503);}
+}
+
 export default {
   async fetch(request,env) {
     const path=new URL(request.url).pathname;
     if(!path.startsWith('/api/'))return env.ASSETS.fetch(request);
     // Safety: no checkout on Cloudflare preview deployment or alternate domain.
     if(new URL(request.url).origin!==SITE_ORIGIN)return reply({error:'Unknown payment endpoint.'},404);
+    if(path==='/api/admin/orders')return adminOrders(request,env);
     if(path==='/api/readiness' && request.method==='GET')return readiness(env);
     if(path==='/api/confirmation-readiness' && request.method==='GET'){
       const config=await setup(env);
