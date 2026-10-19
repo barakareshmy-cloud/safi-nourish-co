@@ -1,0 +1,14 @@
+SAFI NOURISH DESIGNER CREDIT
+
+These 9 HTML pages include a footer credit to Gyane Baraka (barakareshmy@gmail.com).
+
+IMPORTANT: These files are derived from the previously prepared Google Search SEO pages. If your website HTML has changed since that SEO upload, replacing the files could overwrite newer HTML edits. In that case, upload your latest GitHub ZIP to ChatGPT instead for a precise edit.
+
+1. Extract this ZIP.
+2. Open the Safi Nourish GitHub repository, branch MAIN (not gh-pages).
+3. Upload the nine .html files (not the .txt instruction file).
+4. Commit changes; wait for Cloudflare Production deployment.
+5. Check footer on Home, Shop, Beef, Sheep, Bulk, About, Contact, Gallery, Why Tallow.
+6. Check the shopping cart and payment-enabled status remain unchanged.
+
+No JavaScript, Cloudflare payment configuration, or images are changed by this package.
